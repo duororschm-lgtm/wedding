@@ -63,24 +63,49 @@
       }
     } catch (e) { sb = null; }
 
-    /* 云端内容（编辑器保存的） */
-    var remoteP = Promise.resolve(null);
-    if (sb) {
-      remoteP = sb.from('site_settings').select('data').eq('id', 1).maybeSingle()
-        .then(function (r) { return (r.data && r.data.data) ? r.data.data : null; })
-        .catch(function () { return null; });
+    /* 上次成功拿到的云端配置（编辑器保存过的），作为网络不通时的兜底 */
+    var cachedSettings = null;
+    try {
+      var c = JSON.parse(localStorage.getItem('wedding-site-settings') || 'null');
+      if (c && c.data) cachedSettings = c.data;
+    } catch (e) {}
+
+    /* 最多等 ms 毫秒：Supabase 慢或被墙时不阻塞开屏信封 */
+    function withTimeout(p, ms) {
+      return Promise.race([
+        Promise.resolve(p).catch(function () { return null; }),
+        new Promise(function (resolve) { setTimeout(function () { resolve(null); }, ms); })
+      ]);
     }
 
-    /* 专属邀请：?g=token → 查宾客姓名 */
+    /* 云端内容（编辑器保存的）：3 秒内拿到就用新的，拿不到用缓存 */
+    var remoteP = Promise.resolve(cachedSettings);
+    if (sb) {
+      remoteP = withTimeout(
+        sb.from('site_settings').select('data').eq('id', 1).maybeSingle()
+          .then(function (r) {
+            var d = (r.data && r.data.data) ? r.data.data : null;
+            if (d) {
+              try { localStorage.setItem('wedding-site-settings', JSON.stringify({ t: Date.now(), data: d })); } catch (e) {}
+            }
+            return d;
+          }),
+        3000
+      ).then(function (fresh) { return fresh || cachedSettings; });
+    }
+
+    /* 专属邀请：?g=token → 查宾客姓名（超时不影响打开，回执仍可提交） */
     var token = new URLSearchParams(location.search).get('g');
     var guestP = Promise.resolve({ id: null, name: null });
     if (sb && token) {
-      guestP = sb.rpc('get_guest', { p_token: token })
-        .then(function (r) {
-          var g = (r.data && r.data[0]) || null;
-          return g ? { id: g.id, name: g.name } : { id: null, name: null };
-        })
-        .catch(function () { return { id: null, name: null }; });
+      guestP = withTimeout(
+        sb.rpc('get_guest', { p_token: token })
+          .then(function (r) {
+            var g = (r.data && r.data[0]) || null;
+            return g ? { id: g.id, name: g.name } : { id: null, name: null };
+          }),
+        3000
+      ).then(function (g) { return g || { id: null, name: null }; });
     }
 
     return Promise.all([remoteP, guestP]).then(function (res) {
@@ -97,9 +122,13 @@
     var supabase = ctx.supabase;
     var guest = ctx.guest;
 
-    /* 访问统计：每次打开请柬记一条（专属链接带上嘉宾 id），失败不打扰 */
+    /* 访问统计：每次打开请柬记一条（专属链接带上嘉宾 id），失败不打扰
+       注意：supabase 查询对象只有 .then 没有 .catch，
+       必须 Promise.resolve 转成真 Promise 才能 .catch，否则会抛 TypeError 卡死整个页面 */
     if (supabase) {
-      supabase.rpc('log_visit', { p_guest: guest.id }).catch(function () {});
+      try {
+        Promise.resolve(supabase.rpc('log_visit', { p_guest: guest.id })).catch(function () {});
+      } catch (e) { /* 忽略 */ }
     }
 
     C.couple = C.couple || {}; C.date = C.date || {}; C.venue = C.venue || {};
