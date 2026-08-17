@@ -552,6 +552,193 @@
         '.OOOoOOoO.',
         '..OOoOOO..'
       ]
+    },
+
+    /* ---------- 原创游戏元素（钓祝福/花园/烟花/占卜/成就） ---------- */
+
+    /* 小鱼 12×7（钓祝福；blue/pink 为换色变体） */
+    fish: {
+      palette: { O: P.orange, W: P.white, E: P.ink },
+      grid: [
+        '..OO......OO',
+        '.OOOO....OO.',
+        'OOOOOO..OO..',
+        'OOOWEOOO....',
+        'OOOOOO..OO..',
+        '.OOOO....OO.',
+        '..OO......OO'
+      ]
+    },
+    fishBlue: {
+      palette: { O: P.blue, W: P.white, E: P.ink },
+      grid: [
+        '..OO......OO',
+        '.OOOO....OO.',
+        'OOOOOO..OO..',
+        'OOOWEOOO....',
+        'OOOOOO..OO..',
+        '.OOOO....OO.',
+        '..OO......OO'
+      ]
+    },
+    fishPink: {
+      palette: { O: P.pink, W: P.white, E: P.ink },
+      grid: [
+        '..OO......OO',
+        '.OOOO....OO.',
+        'OOOOOO..OO..',
+        'OOOWEOOO....',
+        'OOOOOO..OO..',
+        '.OOOO....OO.',
+        '..OO......OO'
+      ]
+    },
+
+    /* 浮漂 4×6 */
+    bobber: {
+      palette: { W: P.white, R: P.red },
+      grid: [
+        'WWWW',
+        'WRRW',
+        'RRRR',
+        'RRRR',
+        'RRRR',
+        'RRRR'
+      ]
+    },
+
+    /* 种子 4×4（花园成长：种子→幼苗→花苞→开花） */
+    seed: {
+      palette: { B: P.inkSoft },
+      grid: [
+        '.B..',
+        'BBB.',
+        'BBBB',
+        '.BB.'
+      ]
+    },
+
+    /* 幼苗 6×6 */
+    sprout: {
+      palette: { G: P.grass, B: P.inkSoft },
+      grid: [
+        '..GG..',
+        '.G..G.',
+        '..GG..',
+        '..G...',
+        '..B...',
+        '..B...'
+      ]
+    },
+
+    /* 花苞 6×8 */
+    bud: {
+      palette: { G: P.grass, P: P.pink, B: P.inkSoft },
+      grid: [
+        '..GG..',
+        '.GPPG.',
+        '.GPPG.',
+        '..GG..',
+        '..G...',
+        '..B...',
+        '..B...',
+        '......'
+      ]
+    },
+
+    /* 郁金香 7×9 */
+    tulip: {
+      palette: { R: P.red, r: P.redDark, G: P.grass },
+      grid: [
+        '..RRR..',
+        '.RRRRR.',
+        'RRRRRRR',
+        'RRRRRRR',
+        '.RRRRR.',
+        '..RRR..',
+        '...G...',
+        '..GGG..',
+        '...G...'
+      ]
+    },
+
+    /* 雏菊 8×8 */
+    daisy: {
+      palette: { W: P.white, Y: P.gold, G: P.grass },
+      grid: [
+        '..WWWW..',
+        '.WWYYWW.',
+        'WWYYYYWW',
+        'WWYYYYWW',
+        '.WWYYWW.',
+        '..WWWW..',
+        '...G....',
+        '..GGG...'
+      ]
+    },
+
+    /* 风铃草 7×8 */
+    bluebell: {
+      palette: { B: P.blue, G: P.grass },
+      grid: [
+        '...G...',
+        '..GGG..',
+        '..BBB..',
+        '.BBBBB.',
+        'BBBBBBB',
+        'BBBBBBB',
+        '.BBBBB.',
+        '..BBB..'
+      ]
+    },
+
+    /* 烟花 9×9 */
+    firework: {
+      palette: { X: P.gold, R: P.red },
+      grid: [
+        'X.......X',
+        '.X..X..X.',
+        '..X.X.X..',
+        '...XXX...',
+        'XXXXRXXXX',
+        '...XXX...',
+        '..X.X.X..',
+        '.X..X..X.',
+        'X.......X'
+      ]
+    },
+
+    /* 水晶球 9×10（占卜运势） */
+    crystal: {
+      palette: { G: P.gold, B: P.blue, W: P.white },
+      grid: [
+        '..GGGGG..',
+        '.GGGGGGG.',
+        'GGGGGGGGG',
+        'G.BBBBB.G',
+        'G.BBWBB.G',
+        'G.BBBBB.G',
+        'G.BBBBB.G',
+        'GGGGGGGGG',
+        '.GGGGGGG.',
+        '..GGGGG..'
+      ]
+    },
+
+    /* 奖杯 9×9（成就） */
+    trophy: {
+      palette: { G: P.gold },
+      grid: [
+        '..GGGGG..',
+        '.GGGGGGG.',
+        '.GG...GG.',
+        '..G...G..',
+        '...GGG...',
+        '....G....',
+        '...GGG...',
+        '..GGGGG..',
+        '.........'
+      ]
     }
   };
 

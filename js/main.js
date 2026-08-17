@@ -315,6 +315,7 @@
     function openEnvelope() {
       if (envelopeOpened) return;
       envelopeOpened = true;
+      achievements.unlock('open');
       var wrap = $('#envelope-wrap');
       var screen = $('#envelope-screen');
       wrap.classList.add('open');
@@ -334,6 +335,7 @@
 
     function skipEnvelope() {
       envelopeOpened = true;
+      achievements.unlock('open');
       $('#envelope-screen').style.display = 'none';
       $('#invitation').removeAttribute('aria-hidden');
       document.body.classList.remove('lock');
@@ -976,6 +978,7 @@
 
       /* 成功页摘要 */
       function showSuccess(s) {
+        achievements.unlock('rsvp');
         form.classList.add('hidden');
         successBox.classList.remove('hidden');
         $('#rsvp-success-text').textContent = s.attending ? '收到你的祝福啦！♥' : '收到啦，期待下次相聚 ♥';
@@ -1113,6 +1116,11 @@
         $('#rsvp').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
 
+      /* 成就图鉴 */
+      var ftAch = $('#ft-ach');
+      ftAch.appendChild(PixelArt.sprite('trophy', 4));
+      ftAch.addEventListener('click', function () { achievements.setOpen(true); });
+
       $('#back-top-btn').addEventListener('click', function () {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
@@ -1121,6 +1129,434 @@
     /* ---------- 打开信封后亮出浮动工具栏 ---------- */
     function showTools() {
       $('#floating-tools').hidden = false;
+    }
+
+    /* ============================================================
+       十二、成就系统（localStorage 记录 + 解锁提示 + 图鉴面板）
+       ============================================================ */
+    var achievements = (function () {
+      var KEY = 'pixel-wedding-ach';
+      var enabled = true;
+      var earned = {};
+      try { earned = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { earned = {}; }
+      var DEFS = [
+        { id: 'open', icon: 'heart', name: '拆开邀请函', desc: '点开信封，开启这一天' },
+        { id: 'fish1', icon: 'fish', name: '第一条祝福', desc: '在池塘钓起一条祝福鱼' },
+        { id: 'fish3', icon: 'fishBlue', name: '祝福小渔夫', desc: '收集 3 条祝福鱼' },
+        { id: 'plant1', icon: 'tulip', name: '种下第一朵花', desc: '为新人种下一朵花' },
+        { id: 'plant3', icon: 'daisy', name: '山谷园丁', desc: '花园里盛开 3 朵花' },
+        { id: 'treasure1', icon: 'heartSm', name: '第一颗心', desc: '找到一颗藏起来的爱心' },
+        { id: 'treasureAll', icon: 'star', name: '心之所向', desc: '集齐全部爱心' },
+        { id: 'firework', icon: 'firework', name: '夜空绽放', desc: '放一场像素烟花' },
+        { id: 'fortune', icon: 'crystal', name: '好运签', desc: '抽取一次今日运势' },
+        { id: 'rsvp', icon: 'gift', name: '送出祝福', desc: '提交出席回执' }
+      ];
+      var earnedCount = DEFS.filter(function (d) { return earned[d.id]; }).length;
+
+      function save() { try { localStorage.setItem(KEY, JSON.stringify(earned)); } catch (e) { /* 忽略 */ } }
+
+      function renderPanel() {
+        var list = $('#ach-list');
+        if (!list) return;
+        list.innerHTML = '';
+        DEFS.forEach(function (d) {
+          var li = document.createElement('li');
+          li.className = 'ach-item' + (earned[d.id] ? '' : ' locked');
+          var ic = makeDiv('ach-icon');
+          ic.appendChild(PixelArt.sprite(d.icon, 3));
+          var body = makeDiv('ach-body');
+          var nm = document.createElement('b');
+          nm.textContent = d.name + (earned[d.id] ? '' : '（未解锁）');
+          var dc = document.createElement('span');
+          dc.textContent = earned[d.id] ? d.desc : '？？？';
+          body.appendChild(nm);
+          body.appendChild(dc);
+          li.appendChild(ic);
+          li.appendChild(body);
+          list.appendChild(li);
+        });
+        $('#ach-summary').textContent = '已解锁 ' + earnedCount + ' / ' + DEFS.length;
+      }
+
+      function setOpen(on) {
+        $('#ach-mask').hidden = !on;
+        $('#ach-panel').hidden = !on;
+        if (on) renderPanel();
+      }
+
+      function unlock(id) {
+        if (!enabled || earned[id]) return;
+        earned[id] = true;
+        earnedCount++;
+        save();
+        var def = null;
+        DEFS.forEach(function (d) { if (d.id === id) def = d; });
+        if (def) toast('🏆 成就达成：' + def.name + '！');
+      }
+
+      $('#ach-close').addEventListener('click', function () { setOpen(false); });
+      $('#ach-mask').addEventListener('click', function () { setOpen(false); });
+      $('#ach-head-icon').appendChild(PixelArt.sprite('trophy', 4));
+
+      return { init: function (on) { enabled = on !== false; }, unlock: unlock, setOpen: setOpen };
+    })();
+
+    /* ============================================================
+       十三、游戏游园会（钓祝福 / 种花园 / 寻宝集心 / 像素烟花 / 占卜运势）
+       全部本地小游戏 + 少量云端计数；配置在 config.js 的 games，
+       编辑器「游戏」页可改开关和文案。
+       ============================================================ */
+    function buildGames() {
+      var DEFAULT_BLESSINGS = [
+        '钓起一条锦鲤，好运年年有余 ♥',
+        '这条鱼说：祝你们白头偕老！',
+        '山谷的鱼都知道，你们是天造地设的一对',
+        '鱼儿吐了个泡泡，里面写着「早生贵子」',
+        '这条鱼见证过很多婚礼，说你们最般配',
+        '钓到了！今天的幸福值 +100',
+        '这条鱼带来了远方的祝福：百年好合',
+        '鱼鳞闪闪，像你们的未来一样发光',
+        '它说：婚礼当天一定要开开心心',
+        '钓起一条「心想事成」鱼 ♥'
+      ];
+      var DEFAULT_FORTUNES = [
+        '今日宜微笑，宜祝福，宜沾喜气。',
+        '最近的好运正骑着南瓜车赶来。',
+        '山谷的风说：你的心愿正在发芽。',
+        '今天遇到的每个人都会对你笑。',
+        '好运像野莓一样，一摘一大把。',
+        '你很快就会收到一个好消息。',
+        '保持开心，幸福会自己找上门。',
+        '今天的你，是山谷最幸运的人。'
+      ];
+
+      var cfg = mergeDeep({
+        fishing: { on: true, blessings: DEFAULT_BLESSINGS },
+        garden: { on: true },
+        treasure: { on: true, count: 6, reward: '集齐了！山谷的心意都归你 ♥' },
+        fireworks: { on: true },
+        fortune: { on: true, fortunes: DEFAULT_FORTUNES },
+        achievements: { on: true }
+      }, C.games);
+
+      /* 开关：关掉的游戏整卡隐藏；全关则整个游园会隐藏 */
+      var CARDS = {
+        fishing: '#game-fishing', garden: '#game-garden', treasure: '#game-treasure',
+        fireworks: '#game-fireworks', fortune: '#game-fortune'
+      };
+      var anyOn = false;
+      Object.keys(CARDS).forEach(function (k) {
+        if (!cfg[k] || cfg[k].on !== false) anyOn = true;
+        else $(CARDS[k]).classList.add('hidden');
+      });
+      if (!anyOn) { $('#games').classList.add('hidden'); return; }
+
+      achievements.init(!cfg.achievements || cfg.achievements.on !== false);
+      if (!cfg.achievements || cfg.achievements.on === false) $('#ft-ach').classList.add('hidden');
+
+      buildFishing(cfg.fishing);
+      buildGarden(cfg.garden);
+      buildTreasure(cfg.treasure);
+      buildFireworks(cfg.fireworks);
+      buildFortune(cfg.fortune);
+
+      /* 卡片头图 */
+      $('#gi-fishing').appendChild(PixelArt.sprite('fish', 4));
+      $('#gi-garden').appendChild(PixelArt.sprite('tulip', 4));
+      $('#gi-treasure').appendChild(PixelArt.sprite('heartSm', 4));
+      $('#gi-fireworks').appendChild(PixelArt.sprite('firework', 4));
+      $('#gi-fortune').appendChild(PixelArt.sprite('crystal', 4));
+    }
+
+    /* ---------- ① 钓祝福：抛竿 → 等咬钩 → 限时收竿 → 钓起一条祝福 ---------- */
+    function buildFishing(g) {
+      var btn = $('#fishing-btn');
+      var ripple = $('#fishing-ripple');
+      var bobber = $('#fishing-bobber');
+      var fishPop = $('#fish-pop');
+      var log = $('#fish-log');
+      var blessings = (g && g.blessings && g.blessings.length) ? g.blessings : [];
+      var kinds = ['fish', 'fishBlue', 'fishPink'];
+      var state = 'idle';                       // idle | waiting | bite
+      var caught = 0;
+      var biteTimer = null;
+
+      function resetScene() { ripple.hidden = true; bobber.hidden = true; fishPop.hidden = true; }
+      function addLog(msg) {
+        var li = document.createElement('li');
+        li.textContent = msg;
+        log.insertBefore(li, log.firstChild);
+        while (log.children.length > 8) log.removeChild(log.lastChild);
+      }
+
+      btn.addEventListener('click', function () {
+        if (state === 'waiting') return;                      // 还没上钩，耐心点
+        if (state === 'bite') {                               // 咬钩瞬间 → 收竿！
+          clearTimeout(biteTimer);
+          state = 'idle';
+          resetScene();
+          fishPop.hidden = false;
+          fishPop.innerHTML = '';
+          fishPop.appendChild(PixelArt.sprite(kinds[caught % kinds.length], 5));
+          var msg = blessings.length ? blessings[caught % blessings.length] : '钓到一条祝福鱼，幸福 +1 ♥';
+          caught++;
+          addLog(msg);
+          toast(msg);
+          achievements.unlock('fish1');
+          if (caught >= 3) achievements.unlock('fish3');
+          btn.textContent = '🎣 再钓一次';
+          return;
+        }
+        /* idle → 抛竿等待 */
+        state = 'waiting';
+        bobber.hidden = false;
+        btn.textContent = '… 等待鱼儿上钩 …';
+        biteTimer = setTimeout(function () {
+          state = 'bite';
+          ripple.hidden = false;
+          btn.textContent = '！有鱼上钩了，快收竿！';
+          biteTimer = setTimeout(function () {                // 犹豫太久 → 鱼跑了
+            if (state !== 'bite') return;
+            state = 'idle';
+            resetScene();
+            btn.textContent = '🎣 抛 竿';
+            toast('鱼儿跑掉了，再试一次吧');
+          }, 2400);
+        }, 900 + Math.random() * 2200);
+      });
+    }
+
+    /* ---------- ② 种花园：选花种下 → 点它浇水 3 次 → 盛开（云端计数） ---------- */
+    function buildGarden(g) {
+      var bed = $('#garden-bed');
+      var picks = $all('#game-garden .seed-pick');
+      var FLOWER_NAMES = { tulip: '郁金香', daisy: '雏菊', bluebell: '风铃草' };
+      var KEY = 'pixel-wedding-garden';
+      var flowers = [];
+      try { flowers = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { flowers = []; }
+      var chosen = 'tulip';
+
+      picks.forEach(function (b) {
+        b.appendChild(PixelArt.sprite(b.getAttribute('data-flower'), 3));
+        b.addEventListener('click', function () {
+          picks.forEach(function (x) { x.classList.remove('picked'); });
+          b.classList.add('picked');
+          chosen = b.getAttribute('data-flower');
+        });
+      });
+      picks[0].classList.add('picked');
+
+      function save() { try { localStorage.setItem(KEY, JSON.stringify(flowers)); } catch (e) { /* 忽略 */ } }
+
+      function stageSprite(f) {
+        if (f.stage === 0) return PixelArt.sprite('seed', 3);
+        if (f.stage === 1) return PixelArt.sprite('sprout', 4);
+        if (f.stage === 2) return PixelArt.sprite('bud', 4);
+        return PixelArt.sprite(f.type, 5);
+      }
+
+      function render() {
+        bed.innerHTML = '';
+        flowers.forEach(function (f, i) {
+          var cell = makeDiv('garden-plot' + (f.stage === 3 ? ' bloomed' : ''));
+          cell.appendChild(stageSprite(f));
+          var tip = makeDiv('plot-tip');
+          tip.textContent = f.stage === 3 ? (FLOWER_NAMES[f.type] || '花') : (f.stage < 2 ? '浇水' : '再浇一次');
+          cell.appendChild(tip);
+          cell.addEventListener('click', function () { water(i); });
+          bed.appendChild(cell);
+        });
+      }
+
+      function water(i) {
+        var f = flowers[i];
+        if (!f || f.stage >= 3) return;
+        f.stage++;
+        if (f.stage === 3) {
+          var bloomed = flowers.filter(function (x) { return x.stage === 3; }).length;
+          toast((FLOWER_NAMES[f.type] || '花') + '开了，替你送上祝福 ♥');
+          achievements.unlock('plant1');
+          if (bloomed >= 3) achievements.unlock('plant3');
+          /* 云端上报：supabase 可用时计入「山谷花园」总数（编辑器也能看到） */
+          if (supabase) {
+            supabase.from('garden').insert([{ flower_type: f.type, message: null }])
+              .then(function (r) { if (!r.error) refreshGardenCount(); })
+              .catch(function () { /* 忽略 */ });
+          }
+        }
+        save();
+        render();
+      }
+
+      $('#garden-plant-btn').addEventListener('click', function () {
+        if (flowers.length >= 9) { toast('花园满了，先欣赏一下吧 ♥'); return; }
+        flowers.push({ type: chosen, stage: 0 });
+        save();
+        render();
+        toast('种下啦，记得回来浇水 ♥');
+      });
+
+      render();
+      refreshGardenCount();
+    }
+
+    function refreshGardenCount() {
+      var el = $('#garden-count');
+      if (!supabase) return;
+      supabase.rpc('garden_count').then(function (r) {
+        if (!r.error && typeof r.data === 'number' && r.data > 0) {
+          el.textContent = '山谷花园已盛开 ' + r.data + ' 朵花 ♥';
+          el.hidden = false;
+        }
+      }).catch(function () { /* 忽略 */ });
+    }
+
+    /* ---------- ③ 寻宝集心：爱心散落在页面各处，找到并集齐 ---------- */
+    function buildTreasure(t) {
+      var KEY = 'pixel-wedding-treasure';
+      /* 六个藏宝点（固定位置 + 闪烁提示，找到即消失） */
+      var HOSTS = [
+        { sel: '#dialog-box', styles: { top: '4px', right: '8px' } },
+        { sel: '#gallery-grid', styles: { top: '-10px', right: '8%' } },
+        { sel: '#info .panel', styles: { bottom: '70px', left: '6px' } },
+        { sel: '#quest .quest-card', styles: { top: '48px', left: '10px' } },
+        { sel: '#guests .animal-grid', styles: { top: '-8px', left: '12%' } },
+        { sel: '#game-fireworks .firework-sky', styles: { bottom: '8px', right: '10px' } }
+      ];
+      var total = Math.min(t && t.count ? t.count : 6, HOSTS.length);
+      var reward = (t && t.reward) || '集齐了！山谷的心意都归你 ♥';
+      var found = [];
+      try { found = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { found = []; }
+
+      if (total <= 0) { $('#game-treasure').classList.add('hidden'); return; }
+
+      $('#treasure-total').textContent = total;
+      $('#treasure-found').textContent = Math.min(found.length, total);
+
+      function showChest() {
+        $('#treasure-chest').hidden = false;
+        $('#treasure-reward').textContent = reward;
+      }
+
+      HOSTS.forEach(function (host, i) {
+        var el = $(host.sel);
+        if (!el) return;
+        el.classList.add('treasure-host');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'treasure-heart';
+        btn.setAttribute('aria-label', '藏起来的爱心 ' + (i + 1));
+        Object.keys(host.styles).forEach(function (k) { btn.style[k] = host.styles[k]; });
+        btn.appendChild(PixelArt.sprite('heartSm', 3));
+        btn.addEventListener('click', function () {
+          if (found.indexOf(i) >= 0) return;
+          found.push(i);
+          try { localStorage.setItem(KEY, JSON.stringify(found)); } catch (e) { /* 忽略 */ }
+          btn.classList.add('got');
+          setTimeout(function () { if (btn.parentNode) btn.parentNode.removeChild(btn); }, 650);
+          achievements.unlock('treasure1');
+          $('#treasure-found').textContent = found.length;
+          if (found.length >= total) {
+            achievements.unlock('treasureAll');
+            showChest();
+            toast('🎁 集齐所有爱心！');
+          } else {
+            toast('♥ 找到一颗心！还剩 ' + (total - found.length) + ' 颗');
+          }
+        });
+        el.appendChild(btn);
+      });
+
+      if (found.length >= total) showChest();
+    }
+
+    /* ---------- ④ 像素烟花：点按钮齐放，点夜空也可单独放 ---------- */
+    function buildFireworks() {
+      var sky = $('#firework-sky');
+      var COLORS = ['#ffc94d', '#e85d75', '#ff8fa5', '#6dbe45', '#4a7fd4', '#ffffff', '#ffb3c1'];
+
+      function launchAt(x, y) {
+        for (var i = 0; i < 14; i++) {
+          var s = makeDiv('spark');
+          var ang = (i / 14) * Math.PI * 2 + (Math.random() * 0.5 - 0.25);
+          var dist = 34 + Math.random() * 46;
+          s.style.left = x + 'px';
+          s.style.top = y + 'px';
+          s.style.background = COLORS[i % COLORS.length];
+          s.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+          s.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
+          sky.appendChild(s);
+          (function (el) {
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1050);
+          })(s);
+        }
+      }
+
+      function volley() {
+        var w = sky.clientWidth || 300;
+        var h = sky.clientHeight || 170;
+        for (var i = 0; i < 4; i++) {
+          (function (x, y) {
+            setTimeout(function () { launchAt(x, y); }, i * 240);
+          })(18 + Math.random() * (w - 36), 16 + Math.random() * (h * 0.6));
+        }
+      }
+
+      $('#firework-btn').addEventListener('click', function () {
+        volley();
+        achievements.unlock('firework');
+        toast('烟花绽放，幸福 +1 ♥');
+      });
+
+      sky.addEventListener('click', function (e) {
+        var r = sky.getBoundingClientRect();
+        launchAt(e.clientX - r.left, e.clientY - r.top);
+      });
+    }
+
+    /* ---------- ⑤ 占卜运势：名字 + 日期做哈希，每人每天同一支签 ---------- */
+    function buildFortune(g) {
+      var input = $('#fortune-name');
+      var result = $('#fortune-result');
+      var fortunes = (g && g.fortunes && g.fortunes.length) ? g.fortunes : [];
+      var LEVELS = ['大吉', '吉', '中吉', '小吉'];
+      var LEVEL_COLORS = ['#e85d75', '#ff9a3c', '#4a7fd4', '#6dbe45'];
+      if (guest && guest.name) input.value = guest.name;
+
+      function hash(s) {
+        var h = 0;
+        for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+        return h;
+      }
+
+      $('#fortune-btn').addEventListener('click', function () {
+        var name = input.value.trim() || '远方的朋友';
+        var d = new Date();
+        var key = name + '|' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate());
+        var h = hash(key);
+
+        result.hidden = false;
+        result.innerHTML = '';
+        var card = makeDiv('fortune-card');
+        var ic = makeDiv('fortune-ic');
+        ic.appendChild(PixelArt.sprite('crystal', 4));
+        var lv = makeDiv('fortune-level');
+        lv.textContent = LEVELS[h % LEVELS.length];
+        lv.style.background = LEVEL_COLORS[h % LEVEL_COLORS.length];
+        var who = makeDiv('fortune-who');
+        who.textContent = name + ' · 今日运势';
+        var tx = document.createElement('p');
+        tx.textContent = fortunes.length
+          ? fortunes[Math.floor(h / LEVELS.length) % fortunes.length]
+          : '今日宜微笑，宜祝福，宜沾喜气。';
+        card.appendChild(ic);
+        card.appendChild(lv);
+        card.appendChild(who);
+        card.appendChild(tx);
+        result.appendChild(card);
+        achievements.unlock('fortune');
+        toast('签文已送到你手上 ♥');
+      });
     }
 
     /* ============================================================
@@ -1140,6 +1576,7 @@
       buildInfo();
       buildQuest();
       buildGuests();
+      buildGames();
       buildRSVP();
       buildShare();
       buildReveal();

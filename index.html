@@ -205,6 +205,97 @@
       <div class="animal-grid reveal" id="animal-grid" aria-label="山谷动物席位墙"></div>
     </section>
 
+    <!-- 游戏游园会：钓祝福 / 种花园 / 寻宝集心 / 像素烟花 / 占卜运势 -->
+    <section class="section games-section" id="games">
+      <h2 class="sec-title"><span class="heart" data-heart></span>游戏游园会<span class="heart" data-heart></span></h2>
+      <p class="games-intro reveal" id="games-intro">婚礼开始前，山谷游园会开张啦，来攒一点好运吧 ♥</p>
+      <div class="games-grid">
+
+        <article class="game-card reveal" id="game-fishing">
+          <header class="game-head">
+            <div class="game-icon" id="gi-fishing"></div>
+            <div class="game-head-text">
+              <h3>钓祝福</h3>
+              <p>山谷池塘里，住着会送祝福的鱼</p>
+            </div>
+          </header>
+          <div class="pond" id="fishing-pond">
+            <img src="assets/bg/pix/pond.png" alt="山谷池塘">
+            <div class="pond-scene">
+              <div class="ripple" id="fishing-ripple" hidden></div>
+              <div class="bobber" id="fishing-bobber" hidden></div>
+              <div class="fish-pop" id="fish-pop" hidden></div>
+            </div>
+          </div>
+          <button class="btn btn-block" id="fishing-btn" type="button">🎣 抛 竿</button>
+          <ul class="fish-log" id="fish-log"></ul>
+        </article>
+
+        <article class="game-card reveal" id="game-garden">
+          <header class="game-head">
+            <div class="game-icon" id="gi-garden"></div>
+            <div class="game-head-text">
+              <h3>种花园</h3>
+              <p>选一朵花，浇水等它盛开</p>
+            </div>
+          </header>
+          <div class="garden-bed" id="garden-bed"></div>
+          <div class="garden-tools">
+            <div class="seed-picks">
+              <button class="seed-pick" data-flower="tulip" type="button" aria-label="选择郁金香"></button>
+              <button class="seed-pick" data-flower="daisy" type="button" aria-label="选择雏菊"></button>
+              <button class="seed-pick" data-flower="bluebell" type="button" aria-label="选择风铃草"></button>
+            </div>
+            <button class="btn" id="garden-plant-btn" type="button">种 下</button>
+          </div>
+          <p class="garden-count" id="garden-count" hidden></p>
+        </article>
+
+        <article class="game-card reveal" id="game-treasure">
+          <header class="game-head">
+            <div class="game-icon" id="gi-treasure"></div>
+            <div class="game-head-text">
+              <h3>寻宝集心</h3>
+              <p>把藏起来的爱心都找出来</p>
+            </div>
+          </header>
+          <div class="treasure-progress">已找到 <b id="treasure-found">0</b> / <b id="treasure-total">6</b> 颗心</div>
+          <div class="treasure-chest" id="treasure-chest" hidden>
+            <p>🎁 全部找到！</p>
+            <span id="treasure-reward"></span>
+          </div>
+        </article>
+
+        <article class="game-card reveal" id="game-fireworks">
+          <header class="game-head">
+            <div class="game-icon" id="gi-fireworks"></div>
+            <div class="game-head-text">
+              <h3>像素烟花</h3>
+              <p>为新人放一场夜空烟花</p>
+            </div>
+          </header>
+          <div class="firework-sky" id="firework-sky" aria-label="烟花夜空，点击也能放烟花"></div>
+          <button class="btn btn-block" id="firework-btn" type="button">🎆 放一场烟花</button>
+        </article>
+
+        <article class="game-card reveal" id="game-fortune">
+          <header class="game-head">
+            <div class="game-icon" id="gi-fortune"></div>
+            <div class="game-head-text">
+              <h3>占卜运势</h3>
+              <p>水晶球里，有山谷的好运签</p>
+            </div>
+          </header>
+          <div class="fortune-input">
+            <input type="text" id="fortune-name" maxlength="10" placeholder="写下你的名字">
+            <button class="btn" id="fortune-btn" type="button">抽 签</button>
+          </div>
+          <div class="fortune-result" id="fortune-result" hidden></div>
+        </article>
+
+      </div>
+    </section>
+
     <!-- 页脚 -->
     <footer>
       <div class="scene-divider" id="divider-2" aria-hidden="true"></div>
@@ -218,12 +309,25 @@
     </footer>
   </main>
 
-  <!-- 浮动工具栏：音乐 / 信息 / 回执 -->
+  <!-- 浮动工具栏：音乐 / 信息 / 回执 / 成就 -->
   <nav class="floating-tools" id="floating-tools" hidden aria-label="页面工具">
     <button class="tool-slot" id="ft-music" type="button" aria-label="音乐开关"></button>
     <button class="tool-slot" id="ft-info" type="button" aria-label="查看婚礼信息"></button>
     <button class="tool-slot" id="ft-rsvp" type="button" aria-label="填写出席回执"></button>
+    <button class="tool-slot" id="ft-ach" type="button" aria-label="查看成就图鉴"></button>
   </nav>
+
+  <!-- 成就面板 -->
+  <div id="ach-mask" class="ach-mask" hidden></div>
+  <div id="ach-panel" class="ach-panel" hidden role="dialog" aria-label="成就图鉴">
+    <div class="ach-head">
+      <span class="ach-head-icon" id="ach-head-icon"></span>
+      <h3>成就图鉴</h3>
+      <button id="ach-close" type="button" aria-label="关闭">✕</button>
+    </div>
+    <p class="ach-summary" id="ach-summary"></p>
+    <ul class="ach-list" id="ach-list"></ul>
+  </div>
 
   <!-- 灯箱 -->
   <div id="lightbox" hidden><img id="lightbox-img" alt="照片大图"></div>

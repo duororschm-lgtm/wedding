@@ -165,7 +165,7 @@
   });
 
   /* ---------- tab 切换 ---------- */
-  var TAB_IDS = ['content', 'photos', 'guests', 'board'];
+  var TAB_IDS = ['content', 'photos', 'guests', 'games', 'board'];
   function activateTab(id) {
     $all('.editor-tabs .tab').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-tab') === id);
@@ -176,6 +176,7 @@
     if (id === 'content') loadContentTab();
     else if (id === 'photos') loadPhotosTab();
     else if (id === 'guests') loadGuestsTab();
+    else if (id === 'games') loadGamesTab();
     else if (id === 'board') loadBoardTab();
   }
   $all('.editor-tabs .tab').forEach(function (btn) {
@@ -633,7 +634,93 @@
   }
 
   /* ============================================================
-     ④ 看板：统计卡片、回执明细、未回复名单、导出 CSV
+     ④ 游戏：小游戏开关、祝福语池、签文库、寻宝配置、花园统计
+     ============================================================ */
+  var GAME_KEYS = ['fishing', 'garden', 'treasure', 'fireworks', 'fortune', 'achievements'];
+  var GAME_LABELS = {
+    fishing: '🎣 钓祝福', garden: '🌸 种花园', treasure: '🔍 寻宝集心',
+    fireworks: '🎆 像素烟花', fortune: '🔮 占卜运势', achievements: '🏆 成就系统'
+  };
+
+  function loadGamesTab() {
+    readSettings().then(function (serverData) {
+      var g = mergePerLevel(C, serverData).games || {};
+      var sw = $('#ed-switches');
+      sw.innerHTML = '';
+      GAME_KEYS.forEach(function (k) {
+        var lbl = document.createElement('label');
+        lbl.className = 'editor-switch';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.setAttribute('data-key', k);
+        cb.checked = !g[k] || g[k].on !== false;
+        var span = document.createElement('span');
+        span.textContent = GAME_LABELS[k];
+        lbl.appendChild(cb);
+        lbl.appendChild(span);
+        sw.appendChild(lbl);
+      });
+      $('#ed-blessings').value = ((g.fishing && g.fishing.blessings) || []).join('\n');
+      $('#ed-fortunes').value = ((g.fortune && g.fortune.fortunes) || []).join('\n');
+      $('#ed-treasure-count').value = (g.treasure && g.treasure.count) || 6;
+      $('#ed-treasure-reward').value = (g.treasure && g.treasure.reward) || '';
+      refreshGardenStat();
+    }).catch(function (e) {
+      toast('读取配置失败：' + e.message + '（site_settings 表建好了吗？）');
+    });
+  }
+
+  function refreshGardenStat() {
+    var el = $('#ed-garden-stat');
+    supabase.rpc('garden_count').then(function (r) {
+      if (r.error) {
+        el.textContent = '花园统计不可用：' + r.error.message + '（请在 SQL Editor 重跑 db/init.sql）';
+        return;
+      }
+      el.textContent = '宾客们已经在山谷花园种下 ' + r.data + ' 朵花 ♥';
+    }).catch(function () {
+      el.textContent = '花园统计不可用（网络或权限问题）';
+    });
+  }
+
+  function linesToArray(id) {
+    var out = [];
+    String($(id).value || '').split('\n').forEach(function (line) {
+      var t = line.trim();
+      if (t) out.push(t);
+    });
+    return out;
+  }
+
+  function collectGamesForm() {
+    var games = {};
+    $all('#ed-switches input').forEach(function (cb) {
+      var k = cb.getAttribute('data-key');
+      if (!k) return;
+      games[k] = { on: cb.checked };
+    });
+    games.fishing.blessings = linesToArray('#ed-blessings');
+    games.fortune.fortunes = linesToArray('#ed-fortunes');
+    var count = parseInt($('#ed-treasure-count').value, 10);
+    games.treasure.count = isNaN(count) ? 6 : Math.max(1, Math.min(6, count));
+    games.treasure.reward = $('#ed-treasure-reward').value.trim();
+    return { games: games };
+  }
+
+  $('#games-save').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    saveSettingsData(collectGamesForm()).then(function () {
+      toast('已保存，请柬即时生效');
+    }).catch(function (e) {
+      toast('保存失败：' + e.message + '（site_settings 表建好了吗？）');
+    }).then(function () {
+      btn.disabled = false;
+    });
+  });
+
+  /* ============================================================
+     ⑤ 看板：统计卡片、回执明细、未回复名单、导出 CSV
      ============================================================ */
   var rsvpCache = [];
   var guestsMap = {};

@@ -208,3 +208,23 @@
 @media (max-width: 480px) {
   .editor-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- 游戏开关 ---------- */
+.editor-switches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.editor-switch {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--cream-2, #ffefc9);
+  border: 3px solid var(--ink);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 20px;
+}
+.editor-switch input {
+  width: 20px; height: 20px;
+  accent-color: #e85d75;
+  cursor: pointer;
+}

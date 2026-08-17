@@ -43,6 +43,7 @@
         <button class="tab active" data-tab="content" type="button">内容</button>
         <button class="tab" data-tab="photos" type="button">照片</button>
         <button class="tab" data-tab="guests" type="button">嘉宾</button>
+        <button class="tab" data-tab="games" type="button">游戏</button>
         <button class="tab" data-tab="board" type="button">看板</button>
       </nav>
 
@@ -170,6 +171,41 @@
           <p id="guest-empty" class="editor-hint hidden" style="text-align:center">还没有嘉宾，添加后每人会有一个专属链接 ♥</p>
         </div>
         <p class="editor-note">发给谁就点谁的复制链接，对方打开请柬会自动显示 ta 的名字</p>
+      </section>
+
+      <!-- ⑤ 游戏 -->
+      <section id="tab-games" class="tab-page hidden">
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">小游戏开关</h2>
+          <div class="editor-switches" id="ed-switches"></div>
+          <p class="editor-hint">关掉的小游戏不会出现在请柬上；关闭成就后请柬上的奖杯按钮也会隐藏。</p>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">钓祝福 · 祝福语池</h2>
+          <div class="field">
+            <label for="ed-blessings">祝福语（每行一条，钓上来的鱼随机展示）</label>
+            <textarea id="ed-blessings" rows="6"></textarea>
+          </div>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">占卜运势 · 签文库</h2>
+          <div class="field">
+            <label for="ed-fortunes">签文（每行一条；同一人同一天抽到的签固定不变）</label>
+            <textarea id="ed-fortunes" rows="6"></textarea>
+          </div>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">寻宝集心</h2>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-treasure-count">爱心数量（1–6）</label><input type="number" id="ed-treasure-count" min="1" max="6"></div>
+            <div class="field"><label for="ed-treasure-reward">集齐奖励文案</label><input type="text" id="ed-treasure-reward" maxlength="40"></div>
+          </div>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">山谷花园</h2>
+          <p class="editor-hint" id="ed-garden-stat">正在统计……</p>
+        </div>
+        <button class="btn btn-primary btn-block editor-save" id="games-save" type="button">保 存</button>
       </section>
 
       <!-- ④ 看板 -->

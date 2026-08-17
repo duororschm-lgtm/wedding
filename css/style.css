@@ -1078,6 +1078,329 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 /* ============================================================
+   游戏游园会（钓祝福 / 种花园 / 寻宝集心 / 像素烟花 / 占卜运势 / 成就）
+   ============================================================ */
+
+.games-intro {
+  margin: 0 20px 24px;
+  text-align: center;
+  font-size: 20px;
+  color: var(--wood);
+  letter-spacing: 1px;
+}
+.games-grid { display: grid; gap: 28px; padding: 0 14px; }
+.game-card {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: 0 6px 0 rgba(74, 47, 29, 0.5);
+  padding: 20px 18px;
+  position: relative;
+}
+.game-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.game-icon {
+  width: 58px; height: 58px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  box-shadow: inset 3px 3px 0 rgba(138, 91, 43, 0.3);
+}
+.game-head-text h3 { font-size: 26px; margin: 0 0 2px; letter-spacing: 2px; }
+.game-head-text p { font-size: 16px; color: var(--wood); margin: 0; }
+
+/* ① 钓祝福 */
+.pond {
+  position: relative;
+  height: 170px;
+  margin-bottom: 14px;
+  border: var(--border);
+  overflow: hidden;
+  background: var(--sky);
+}
+.pond img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  image-rendering: pixelated;
+}
+.pond-scene { position: absolute; inset: 0; pointer-events: none; }
+.ripple {
+  position: absolute; left: 50%; top: 48%;
+  width: 52px; height: 52px;
+  margin: -26px 0 0 -26px;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  animation: ripple-ring 1.1s ease-out infinite;
+}
+@keyframes ripple-ring {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.bobber {
+  position: absolute; left: 50%; top: 18px;
+  animation: bobber-bob 0.9s ease-in-out infinite;
+}
+@keyframes bobber-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, 6px); }
+}
+.fish-pop {
+  position: absolute; left: 50%; top: 46%;
+  transform: translate(-50%, -50%);
+  animation: fish-jump 0.85s ease-out forwards;
+}
+@keyframes fish-jump {
+  0% { transform: translate(-50%, 26px) scale(0.4); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(-50%, -30px) scale(1); }
+}
+.fish-log {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0 4px;
+  max-height: 140px;
+  overflow: auto;
+}
+.fish-log li {
+  font-size: 16px;
+  color: var(--ink);
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--wood);
+}
+.fish-log li::before { content: "🐟 "; }
+
+/* ② 种花园 */
+.garden-bed {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.garden-plot {
+  position: relative;
+  min-height: 96px;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--wood);
+  border: 3px solid var(--ink);
+  box-shadow: inset 3px 3px 0 rgba(138, 91, 43, 0.4);
+  cursor: pointer;
+}
+.garden-plot.bloomed { background: var(--grass); }
+.plot-tip {
+  position: absolute;
+  left: 0; right: 0; bottom: 4px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+.garden-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.seed-picks { display: flex; gap: 8px; flex: 1; }
+.seed-pick {
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  cursor: pointer;
+  opacity: 0.7;
+}
+.seed-pick.picked {
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--red);
+}
+.garden-count {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 16px;
+  color: var(--wood);
+}
+
+/* ③ 寻宝集心 */
+.treasure-progress {
+  text-align: center;
+  font-size: 18px;
+  color: var(--wood);
+  margin: 0 0 10px;
+}
+.treasure-progress b { font-size: 26px; color: var(--red); }
+.treasure-chest {
+  text-align: center;
+  background: var(--cream);
+  border: 3px dashed var(--ink);
+  padding: 16px 12px;
+}
+.treasure-chest p { margin: 0 0 4px; font-size: 22px; }
+.treasure-chest span { font-size: 16px; color: var(--wood); }
+.treasure-host { position: relative; }
+.treasure-heart {
+  position: absolute;
+  z-index: 20;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  animation: treasure-glim 1.6s ease-in-out infinite;
+}
+@keyframes treasure-glim {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.treasure-heart.got { animation: treasure-got 0.6s ease-out forwards; }
+@keyframes treasure-got {
+  to { transform: scale(1.8); opacity: 0; }
+}
+
+/* ④ 像素烟花 */
+.firework-sky {
+  position: relative;
+  height: 180px;
+  margin-bottom: 14px;
+  border: var(--border);
+  overflow: hidden;
+  cursor: crosshair;
+  background:
+    radial-gradient(2px 2px at 14% 22%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 32% 66%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 55% 30%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 71% 12%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 86% 52%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 8% 82%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 46% 84%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 64% 76%, #fff8d0 50%, transparent 51%),
+    radial-gradient(2px 2px at 92% 88%, #fff8d0 50%, transparent 51%),
+    linear-gradient(#1b2a52, #2c1b40);
+}
+.spark {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: spark-fly 1s ease-out forwards;
+}
+@keyframes spark-fly {
+  0% { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+
+/* ⑤ 占卜运势 */
+.fortune-input { display: flex; gap: 10px; margin-bottom: 12px; }
+.fortune-input input {
+  flex: 1;
+  min-width: 0;
+  border: var(--border);
+  background: var(--paper);
+  font: inherit;
+  font-size: 18px;
+  color: var(--ink);
+  padding: 10px 12px;
+  outline: none;
+}
+.fortune-input input:focus { box-shadow: 0 0 0 3px var(--gold); }
+.fortune-card {
+  text-align: center;
+  background: var(--cream);
+  border: var(--border);
+  padding: 16px 14px;
+  animation: pop-in 0.35s ease-out;
+}
+@keyframes pop-in {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.fortune-ic { display: flex; justify-content: center; }
+.fortune-level {
+  display: inline-block;
+  margin: 8px 0 2px;
+  padding: 2px 18px;
+  color: #fff;
+  border: 3px solid var(--ink);
+  font-size: 20px;
+  letter-spacing: 4px;
+}
+.fortune-who { font-size: 14px; color: var(--wood); margin: 6px 0 0; }
+.fortune-card p { font-size: 18px; margin: 8px 0 0; line-height: 1.7; }
+
+/* 成就面板 */
+.ach-mask {
+  position: fixed; inset: 0;
+  background: rgba(30, 20, 40, 0.55);
+  z-index: 90;
+}
+.ach-panel {
+  position: fixed;
+  left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: min(480px, 100%);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--paper);
+  border: var(--border);
+  border-bottom: 0;
+  padding: 16px;
+  z-index: 91;
+  box-shadow: 0 -8px 0 rgba(74, 47, 29, 0.4);
+}
+.ach-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ach-head-icon { display: flex; align-items: center; }
+.ach-head h3 { margin: 0; flex: 1; font-size: 26px; letter-spacing: 2px; }
+#ach-close {
+  width: 38px; height: 38px;
+  background: var(--red);
+  color: #fff;
+  border: 3px solid var(--ink);
+  font-size: 18px;
+  cursor: pointer;
+}
+.ach-summary {
+  text-align: center;
+  font-size: 16px;
+  color: var(--wood);
+  margin: 0 0 12px;
+}
+.ach-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ach-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  padding: 8px;
+}
+.ach-item.locked { opacity: 0.55; filter: grayscale(1); }
+.ach-icon { flex: none; display: flex; align-items: center; }
+.ach-body b { display: block; font-size: 15px; line-height: 1.4; }
+.ach-body span { font-size: 12px; color: var(--wood); }
+
+/* 夜间主题：游园会换夜色皮肤 */
+body.night .games-intro { color: #cdd8f5; }
+body.night .game-card { background: #1d2b4d; border-color: #9db4e8; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5); }
+body.night .game-head-text h3 { color: #fff3d6; }
+body.night .game-head-text p,
+body.night .plot-tip,
+body.night .garden-count,
+body.night .treasure-progress,
+body.night .fish-log li,
+body.night .fortune-who { color: #cdd8f5; }
+body.night .fish-log li { border-bottom-color: #4a5b8a; }
+body.night .game-icon,
+body.night .seed-pick,
+body.night .treasure-chest,
+body.night .fortune-card,
+body.night .ach-panel { background: #26365e; border-color: #9db4e8; color: #fff3d6; }
+body.night .ach-item { background: #26365e; border-color: #9db4e8; }
+body.night .ach-item b { color: #fff3d6; }
+body.night .ach-item span,
+body.night .ach-summary { color: #cdd8f5; }
+body.night .garden-plot { background: #5a4a3a; border-color: #9db4e8; }
+body.night .garden-plot.bloomed { background: #2e4f2a; }
+body.night .fortune-input input { background: #26365e; border-color: #9db4e8; color: #fff3d6; }
+body.night .treasure-heart svg { filter: brightness(1.4); }
+
+/* ============================================================
    其他
    ============================================================ */
 
