@@ -139,13 +139,29 @@ completely flat pure white (#FFFFFF). No text, no watermark. Crisp square pixels
 no anti-aliasing, flat limited palette. 4:3 composition.
 ```
 
+### ⑩ 婚礼仪式场景 —— 文件名 `ceremony.png`（满幅，不要白底）
+「婚礼节」大图：户外草地上的婚礼仪式场景——木制花拱门（红金花饰）、
+一侧白色婚礼长桌和小蛋糕、两棵树之间拉着彩旗、蓝天白云。温暖喜庆的白昼气氛。
+**不要人物、不要动物**。16:9 横版。
+
+```
+A low-resolution 16-bit pixel art outdoor wedding ceremony scene for a cozy retro
+farming game. A small wooden arch decorated with red and gold pixel flowers
+(#E85D75, #FFC94D) stands on a grassy meadow (#6DBE45, #4E9A3A). A white wedding
+table with a small cake sits to one side, colorful bunting flags strung between two
+round trees, blue sky (#9BD8FF, #7CC0F5) with a few white pixel clouds. Warm festive
+daylight mood. No characters, no people, no animals, no text, no watermark, no logo.
+Crisp square pixels, no anti-aliasing, flat limited color palette. Wide 16:9
+landscape composition.
+```
+
 ---
 
 ## 生成之后
 
 1. 把图放进 `assets/bg/`，**文件名用上面标注的**（例如 `hills-far.png`）
 2. 告诉 Claude「图片放好了」，Claude 会：
-   - 跑 `python tools/pixelize.py` 把图转成硬边真像素（如果 Gemini 生成的不够像素）
+   - 跑 `python tools/process_bg.py` 把图转成硬边真像素（如果 Gemini 生成的不够像素）
    - 集成进视差背景 / 游戏场景（白底的图会自动抠白叠上去）
 3. 生成得不满意很正常，用同一段提示词多抽几次，挑顺眼的
 

@@ -129,6 +129,7 @@
       $('#foot-groom').textContent = groom;
       $('#foot-bride').textContent = bride;
       $('#hero-date').textContent = dateStr + ' 星期' + weekChar + (lunarStr ? '\n' + lunarStr : '');
+      $('#hero-save').textContent = 'SAVE THE DATE · ' + dateStr;
       $('#info-date').textContent =
         C.date.year + '年' + C.date.month + '月' + C.date.day + '日 星期' + weekChar + '\n' + timeStr + ' 开席' + (lunarStr ? '\n' + lunarStr : '');
       $('#info-venue').textContent = (C.venue.name || '') + ' · ' + (C.venue.address || '');
@@ -252,12 +253,35 @@
         row.appendChild(cell);
       });
 
-      /* 动物席位墙 */
+      /* 动物席位墙：云端旧配置只有 4 只时用默认名单补齐到 11 只 */
+      var DEFAULT_ANIMALS = [
+        { sprite: 'chicken', name: '咕咕' },
+        { sprite: 'cow', name: '哞哞' },
+        { sprite: 'cat', name: '年年' },
+        { sprite: 'dog', name: '旺旺' },
+        { sprite: 'sheep', name: '团团' },
+        { sprite: 'pig', name: '噜噜' },
+        { sprite: 'rabbit', name: '蹦蹦' },
+        { sprite: 'duck', name: '嘎嘎' },
+        { sprite: 'fox', name: '阿赤' },
+        { sprite: 'squirrel', name: '栗栗' },
+        { sprite: 'owl', name: '夜夜' }
+      ];
+      var animals = (g.animals || []).slice();
+      if (animals.length < DEFAULT_ANIMALS.length) {
+        DEFAULT_ANIMALS.forEach(function (d) {
+          if (animals.length >= DEFAULT_ANIMALS.length) return;
+          var dup = animals.some(function (a) { return a.sprite === d.sprite; });
+          if (!dup) animals.push(d);
+        });
+      }
+
       var grid = $('#animal-grid');
-      (g.animals || []).forEach(function (a) {
+      animals.forEach(function (a) {
         var cell = makeDiv('animal-cell');
         var icon = makeDiv('animal-icon');
-        icon.appendChild(PixelArt.sprite(a.sprite || 'chicken', 6));
+        var spriteName = (a.sprite && PixelArt.SPRITES[a.sprite]) ? a.sprite : 'chicken';
+        icon.appendChild(PixelArt.sprite(spriteName, 6));
         var name = makeDiv('animal-name');
         name.textContent = a.name || '';
         cell.appendChild(icon);
@@ -533,7 +557,7 @@
       var moon = makeDiv('moon'); moon.appendChild(PixelArt.sprite('moon', 7));
       var stars = makeDiv('stars');
       var shadows = [];
-      for (var s = 0; s < 30; s++) {
+      for (var s = 0; s < 34; s++) {
         shadows.push(((s * 137) % 460 + 10) + 'px ' + ((s * 79) % 150 + 8) + 'px 0 #fff8d0');
       }
       stars.style.cssText = 'width:2px;height:2px;box-shadow:' + shadows.join(',');
@@ -607,14 +631,6 @@
         ticking = true;
         requestAnimationFrame(update);
       }, { passive: true });
-    }
-
-    function buildDivider(el) {
-      el.appendChild(PixelArt.sprite('flower', 5));
-      el.appendChild(PixelArt.sprite('tree', 6));
-      el.appendChild(PixelArt.sprite('flower', 5));
-      el.appendChild(PixelArt.sprite('tree', 6));
-      el.appendChild(PixelArt.sprite('flower', 5));
     }
 
     /* ============================================================
@@ -751,7 +767,7 @@
     }
 
     /* ============================================================
-       八、地图导航 + 添加到日历
+       八、邀请函板（住宿说明 + 今日行程 + 婚礼月历）
        ============================================================ */
     function buildInfo() {
       var v = C.venue;
@@ -777,19 +793,30 @@
       /* 今日行程 */
       buildSchedule();
 
+      /* 婚礼月历（婚礼日高亮） */
+      buildCalendar();
+    }
+
+    /* ============================================================
+       九、山谷地图：像素地图 + 图钉 + 交通指引 + 导航/复制/加日历
+       ============================================================ */
+    function buildMap() {
+      var v = C.venue;
+
+      /* 地图大图（加载失败则隐藏画框） */
+      $('#map-img').onerror = function () { $('#map-frame').classList.add('hidden'); };
+      $('#map-pin').hidden = false;
+
       /* 交通指引两张小卡片 */
       var tr = C.transport || {};
       if (!tr.public && !tr.car) {
-        $('#info .transport-grid').classList.add('hidden');
+        $('#map .transport-grid').classList.add('hidden');
       } else {
         $('#transport-bus').appendChild(PixelArt.sprite('bus', 3));
         $('#transport-car').appendChild(PixelArt.sprite('car', 3));
         $('#transport-public').textContent = tr.public || '';
         $('#transport-car-text').textContent = tr.car || '';
       }
-
-      /* 婚礼月历（婚礼日高亮） */
-      buildCalendar();
 
       /* 复制地址 */
       $('#copy-addr-btn').addEventListener('click', function () {
@@ -829,6 +856,54 @@
         if (/MicroMessenger/i.test(navigator.userAgent)) {
           toast('如果没反应：点右上角「···」→ 在浏览器打开，再点一次');
         }
+      });
+    }
+
+    /* ============================================================
+       十、婚礼节：场景大图 + 花瓣雨（故事对话与照片墙紧随其后）
+       ============================================================ */
+    function buildCeremony() {
+      var src = (C.ceremony && C.ceremony.src) || 'assets/bg/pix/ceremony.png';
+      var board = $('#ceremony-board');
+      var img = $('#ceremony-img');
+      img.src = src;
+      img.onerror = function () { board.classList.add('hidden'); };
+
+      /* 花瓣雨（复用 hero 的 .petal 样式） */
+      var petals = makeDiv('petals');
+      for (var p = 0; p < 10; p++) {
+        var petal = makeDiv('petal');
+        petal.style.left = ((p * 67 + 13) % 100) + '%';
+        petal.style.animationDelay = (p * 1.3 % 8).toFixed(1) + 's';
+        petal.style.animationDuration = (6 + (p * 31) % 4).toFixed(1) + 's';
+        petal.appendChild(PixelArt.sprite('petal', 3));
+        petals.appendChild(petal);
+      }
+      $('#ceremony').appendChild(petals);
+    }
+
+    /* ---------- mascot 队伍：小鸡换色（hue-rotate）+ 错峰跳跃 ---------- */
+    function buildMascots(containerSel, n) {
+      var el = $(containerSel);
+      if (!el) return;
+      for (var i = 0; i < n; i++) {
+        var m = makeDiv('mascot');
+        m.appendChild(PixelArt.sprite('chicken', 4));
+        m.style.filter = 'hue-rotate(' + (i * 60) + 'deg)';
+        m.style.animationDelay = (-i * 0.33).toFixed(2) + 's';
+        el.appendChild(m);
+      }
+    }
+
+    /* ---------- 丰收作物弹跳一排 ---------- */
+    function buildHarvest() {
+      var row = $('#harvest-row');
+      if (!row) return;
+      ['carrot', 'pumpkin', 'strawberry', 'blueberry', 'carrot'].forEach(function (name, i) {
+        var c = makeDiv('crop');
+        c.appendChild(PixelArt.sprite(name, 4));
+        c.style.animationDelay = (-i * 0.4).toFixed(2) + 's';
+        row.appendChild(c);
       });
     }
 
@@ -1108,7 +1183,7 @@
       var ftInfo = $('#ft-info');
       ftInfo.appendChild(PixelArt.sprite('pin', 5));
       ftInfo.addEventListener('click', function () {
-        $('#info').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        $('#notice').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       var ftRsvp = $('#ft-rsvp');
       ftRsvp.appendChild(PixelArt.sprite('heartSm', 5));
@@ -1418,7 +1493,7 @@
       var HOSTS = [
         { sel: '#dialog-box', styles: { top: '4px', right: '8px' } },
         { sel: '#gallery-grid', styles: { top: '-10px', right: '8%' } },
-        { sel: '#info .panel', styles: { bottom: '70px', left: '6px' } },
+        { sel: '#notice .panel', styles: { bottom: '70px', left: '6px' } },
         { sel: '#quest .quest-card', styles: { top: '48px', left: '10px' } },
         { sel: '#guests .animal-grid', styles: { top: '-8px', left: '12%' } },
         { sel: '#game-fireworks .firework-sky', styles: { bottom: '8px', right: '10px' } }
@@ -1568,14 +1643,18 @@
       buildEnvelope();
       buildHero();
       buildParallax();
-      buildDivider($('#divider-1'));
-      buildDivider($('#divider-2'));
+      buildCeremony();
       buildDialogue();
       buildGallery();
       buildCountdown();
       buildInfo();
+      buildMap();
       buildQuest();
+      buildMascots('#quest-mascots', 6);
       buildGuests();
+      buildMascots('#guests-mascots', 6);
+      buildMascots('#ending-mascot', 1);
+      buildHarvest();
       buildGames();
       buildRSVP();
       buildShare();

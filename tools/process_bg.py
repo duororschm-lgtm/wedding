@@ -25,6 +25,7 @@ JOBS = [
     ("campfire.png",        144, 20, True),    # 篝火（白底）
     ("farm-map.png",        256, 28, False),   # 农场俯视地图（满幅）
     ("fortune-booth.png",   192, 24, True),    # 占卜师摊位（白底）
+    ("ceremony.png",        224, 28, False),   # 婚礼仪式场景（满幅）
 ]
 
 SRC_DIR = "assets/bg"

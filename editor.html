@@ -107,6 +107,38 @@
         </div>
 
         <div class="panel editor-panel">
+          <h2 class="editor-sub">任务卡（山谷夜色区块）</h2>
+          <div class="field">
+            <label for="ed-quest-intro">开篇旁白</label>
+            <textarea id="ed-quest-intro" rows="3" maxlength="200" placeholder="例如：婚礼当日，山谷里吹来了请柬的香气……"></textarea>
+          </div>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-quest-arrive">任务 ① · 抵达</label><input type="text" id="ed-quest-arrive" maxlength="40" placeholder="例如：按邀请函上的时间抵达现场"></div>
+            <div class="field"><label for="ed-quest-witness">任务 ② · 见证</label><input type="text" id="ed-quest-witness" maxlength="40" placeholder="例如：拥抱、誓言与交换戒指"></div>
+            <div class="field"><label for="ed-quest-unlock">任务 ③ · 解锁</label><input type="text" id="ed-quest-unlock" maxlength="40" placeholder="例如：一场热闹又浪漫的喜宴"></div>
+            <div class="field"><label for="ed-quest-reward">奖励文案</label><input type="text" id="ed-quest-reward" maxlength="40" placeholder="例如：奖励：永久友谊 +1000"></div>
+          </div>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">山谷友人 &amp; 婚礼场景</h2>
+          <div class="field">
+            <label for="ed-blessing">祝福信（显示在请柬底部，每行一段）</label>
+            <textarea id="ed-blessing" rows="4" maxlength="400"></textarea>
+          </div>
+          <div class="field" style="margin-top:18px">
+            <label for="ed-animals">肖像墙动物（每行一只）</label>
+            <textarea id="ed-animals" rows="6"></textarea>
+          </div>
+          <p class="editor-hint">每行格式：精灵名|名字，例如：chicken|咕咕。精灵名可用：chicken / cow / cat / dog / sheep / pig / rabbit / duck / fox / squirrel / owl。少于 11 只时自动用默认动物补齐，最后一格固定是「?」神秘席位。</p>
+          <div class="field" style="margin-top:18px">
+            <label for="ed-ceremony-img">婚礼场景大图地址（选填）</label>
+            <input type="text" id="ed-ceremony-img" placeholder="留空 = 使用内置场景图">
+          </div>
+          <p class="editor-hint">想换场景图：把图片放进 assets/bg/ 后运行 python tools/process_bg.py，再填例如 assets/bg/pix/ceremony.png（或完整网址）。</p>
+        </div>
+
+        <div class="panel editor-panel">
           <h2 class="editor-sub">故事对话</h2>
           <div class="field">
             <label for="ed-story">对话内容（每行一句）</label>

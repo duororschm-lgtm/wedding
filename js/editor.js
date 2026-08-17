@@ -208,6 +208,9 @@
     var s = data.share || {};
     var m = data.music || {};
     var tr = data.transport || {};
+    var q = data.quest || {};
+    var gu = data.guests || {};
+    var ce = data.ceremony || {};
     $('#ed-groom').value = c.groom || '';
     $('#ed-bride').value = c.bride || '';
     $('#ed-groom-nick').value = c.groomNick || '';
@@ -230,6 +233,14 @@
     $('#ed-share-desc').value = s.desc || '';
     $('#ed-music').value = m.src || '';
     $('#ed-story').value = storyToText(data.story);
+    $('#ed-quest-intro').value = q.intro || '';
+    $('#ed-quest-arrive').value = q.arrive || '';
+    $('#ed-quest-witness').value = q.witness || '';
+    $('#ed-quest-unlock').value = q.unlock || '';
+    $('#ed-quest-reward').value = q.reward || '';
+    $('#ed-blessing').value = gu.blessing || '';
+    $('#ed-animals').value = animalsToText(gu.animals);
+    $('#ed-ceremony-img').value = ce.src || '';
   }
 
   /* 行程：数据库存 [{time, label, desc}]，表单里是每行「时间|环节|说明」 */
@@ -274,6 +285,26 @@
     return out;
   }
 
+  /* 肖像墙动物：数据库存 [{sprite, name}]，表单里是每行「精灵名|名字」 */
+  function animalsToText(arr) {
+    return (arr || []).map(function (a) {
+      return (a.sprite || '') + '|' + (a.name || '');
+    }).join('\n');
+  }
+  function textToAnimals(str) {
+    var out = [];
+    String(str || '').split('\n').forEach(function (line) {
+      var t = line.trim();
+      if (!t) return;
+      var i = t.indexOf('|');
+      var sp = i >= 0 ? t.slice(0, i).trim() : t;
+      var nm = i >= 0 ? t.slice(i + 1).trim() : '';
+      if (!sp) return;
+      out.push({ sprite: sp, name: nm || sp });
+    });
+    return out;
+  }
+
   function numVal(id) {
     var v = parseFloat($(id).value);
     return isNaN(v) ? 0 : v;
@@ -311,7 +342,19 @@
         title: $('#ed-share-title').value.trim(),
         desc: $('#ed-share-desc').value.trim()
       },
-      music: { src: $('#ed-music').value.trim() }
+      music: { src: $('#ed-music').value.trim() },
+      quest: {
+        intro: $('#ed-quest-intro').value.trim(),
+        arrive: $('#ed-quest-arrive').value.trim(),
+        witness: $('#ed-quest-witness').value.trim(),
+        unlock: $('#ed-quest-unlock').value.trim(),
+        reward: $('#ed-quest-reward').value.trim()
+      },
+      guests: {
+        blessing: $('#ed-blessing').value.trim(),
+        animals: textToAnimals($('#ed-animals').value)
+      },
+      ceremony: { src: $('#ed-ceremony-img').value.trim() }
     };
   }
 

@@ -739,6 +739,122 @@
         '..GGGGG..',
         '.........'
       ]
+    },
+
+    /* ---------- 肖像墙动物（原创，共 11 只） ---------- */
+
+    /* 绵羊 团团 10×10 */
+    sheep: {
+      palette: { W: P.white, F: P.cream, E: P.ink, N: P.blush, O: P.inkSoft },
+      grid: [
+        '..WWWWWW..',
+        '.WWWWWWWW.',
+        '.WWWWWWWW.',
+        'WWFFFFFFWW',
+        'WWFEFFEFWW',
+        'WWFFFFFFWW',
+        'WWFNFFNFWW',
+        '.WWWWWWWW.',
+        '.OO....OO.',
+        '.OO....OO.'
+      ]
+    },
+
+    /* 小猪 噜噜 10×9 */
+    pig: {
+      palette: { K: P.pink, k: P.blush, E: P.ink, O: P.inkSoft },
+      grid: [
+        '..KK..KK..',
+        '.KKKKKKKK.',
+        'KKKKKKKKKK',
+        'KKKEKKKEKK',
+        'KKKKKKKKKK',
+        'KKKkkkkKKK',
+        '.KkEkkEkK.',
+        '..KKKKKK..',
+        '.OO....OO.'
+      ]
+    },
+
+    /* 兔子 蹦蹦 10×10 */
+    rabbit: {
+      palette: { K: P.pink, W: P.white, E: P.ink, N: P.blush, O: P.inkSoft },
+      grid: [
+        '.KK....KK.',
+        'KKK....KKK',
+        'KKK....KKK',
+        'KKK....KKK',
+        '.WWWWWWWW.',
+        'WWWWWWWWWW',
+        'WWWEWWWEWW',
+        'WWWWNNWWWW',
+        '.WWWWWWWW.',
+        '.OO....OO.'
+      ]
+    },
+
+    /* 鸭子 嘎嘎 10×8 */
+    duck: {
+      palette: { Y: P.gold, O: P.orange, E: P.ink },
+      grid: [
+        '...YY.....',
+        '..YYYY....',
+        '.EYYYY....',
+        'OOYYYYYYY.',
+        'OYYYYYYYYY',
+        '.YYYYYYYY.',
+        '..YYYYYY..',
+        '..OO..OO..'
+      ]
+    },
+
+    /* 狐狸 阿赤 11×9 */
+    fox: {
+      palette: { O: P.orange, W: P.white, E: P.ink },
+      grid: [
+        '.OO.....OO.',
+        'OOOO...OOOO',
+        '.OOOOOOOOO.',
+        '.OOEOOEOOO.',
+        '..OWWWWWWO.',
+        '..OWWWWWWO.',
+        '...OWEWO...',
+        '....OOO....',
+        '..OOOOOOO..'
+      ]
+    },
+
+    /* 松鼠 栗栗 10×9 */
+    squirrel: {
+      palette: { B: P.inkSoft, W: P.cream, E: P.ink },
+      grid: [
+        '....BB.BBB',
+        '...BBBBBBB',
+        '..BBBBBBBB',
+        '..BWWWWBBB',
+        '..BWEWWEBB',
+        '..BWWWWBBB',
+        '..BBBBBBBB',
+        '.BBBBBBBBB',
+        '.BB.BB.BBB'
+      ]
+    },
+
+    /* 猫头鹰 夜夜 10×10 */
+    owl: {
+      palette: { B: P.inkSoft, W: P.cream, E: P.ink, O: P.gold },
+      grid: [
+        '..BBBBBB..',
+        '.BBBBBBBB.',
+        '.BBWBBWBB.',
+        'BBWEWBWEWB',
+        'BBWEWBWEWB',
+        '.BBWBBWBB.',
+        '..BBOOBB..',
+        '..BOOOOB..',
+        '.BBBBBBBB.',
+        '.OO....OO.'
+      ]
     }
   };
 

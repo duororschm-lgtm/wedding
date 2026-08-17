@@ -65,8 +65,23 @@ window.WEDDING_CONFIG = {
       { sprite: "chicken", name: "咕咕" },
       { sprite: "cow", name: "哞哞" },
       { sprite: "cat", name: "年年" },
-      { sprite: "dog", name: "旺旺" }
+      { sprite: "dog", name: "旺旺" },
+      { sprite: "sheep", name: "团团" },
+      { sprite: "pig", name: "噜噜" },
+      { sprite: "rabbit", name: "蹦蹦" },
+      { sprite: "duck", name: "嘎嘎" },
+      { sprite: "fox", name: "阿赤" },
+      { sprite: "squirrel", name: "栗栗" },
+      { sprite: "owl", name: "夜夜" }
     ]
+  },
+
+  /* ---------- 婚礼节场景大图 ----------
+     src 留空 ""：使用内置的 assets/bg/pix/ceremony.png
+     想用自己的图：把图片放到 assets/bg/ 并运行 python tools/process_bg.py，
+     然后改成例如 "assets/bg/pix/ceremony.png"（或填完整网址） */
+  ceremony: {
+    src: ""
   },
 
   /* ---------- 照片 ----------
