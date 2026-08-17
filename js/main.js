@@ -200,6 +200,82 @@
       el.appendChild(grid);
     }
 
+    /* ---------- 今日行程（序号徽章 + 时间 + 说明） ---------- */
+    function buildSchedule() {
+      var grid = $('#schedule-grid');
+      var list = C.schedule || [];
+      if (!list.length) { $('#schedule-heading').classList.add('hidden'); return; }
+      list.forEach(function (item, i) {
+        var cell = makeDiv('schedule-item');
+        var idx = makeDiv('schedule-index');
+        idx.textContent = pad2(i + 1);
+        var body = makeDiv('schedule-body');
+        var head = document.createElement('b');
+        head.textContent = item.label || '';
+        var time = document.createElement('small');
+        time.textContent = item.time || '';
+        head.appendChild(time);
+        var desc = document.createElement('p');
+        desc.textContent = item.desc || '';
+        body.appendChild(head);
+        body.appendChild(desc);
+        cell.appendChild(idx);
+        cell.appendChild(body);
+        grid.appendChild(cell);
+      });
+    }
+
+    /* ---------- 任务卡（紫色夜晚区块） ---------- */
+    function buildQuest() {
+      var q = C.quest || {};
+      if (q.intro) $('#quest-intro').textContent = q.intro;
+      $('#quest-arrive').textContent = q.arrive || '';
+      $('#quest-witness').textContent = q.witness || '';
+      $('#quest-unlock').textContent = q.unlock || '';
+      $('#quest-reward').textContent = q.reward || '奖励：永久友谊 +1000　幸福值 MAX';
+    }
+
+    /* ---------- 山谷友人：祝福信 + 礼物栏 + 动物席位墙 ---------- */
+    function buildGuests() {
+      var g = C.guests || {};
+
+      if (g.blessing) {
+        $('#blessing-text').innerHTML = g.blessing.split('\n').join('<br>');
+      }
+
+      /* 礼物栏：婚戒 + 丰收果实 */
+      var gifts = ['ring', 'strawberry', 'blueberry', 'carrot', 'pumpkin'];
+      var row = $('#gift-row');
+      gifts.forEach(function (name) {
+        var cell = makeDiv('gift-cell');
+        cell.appendChild(PixelArt.sprite(name, 5));
+        row.appendChild(cell);
+      });
+
+      /* 动物席位墙 */
+      var grid = $('#animal-grid');
+      (g.animals || []).forEach(function (a) {
+        var cell = makeDiv('animal-cell');
+        var icon = makeDiv('animal-icon');
+        icon.appendChild(PixelArt.sprite(a.sprite || 'chicken', 6));
+        var name = makeDiv('animal-name');
+        name.textContent = a.name || '';
+        cell.appendChild(icon);
+        cell.appendChild(name);
+        grid.appendChild(cell);
+      });
+
+      /* “等待你的席位” */
+      var you = makeDiv('animal-cell you');
+      var q = document.createElement('span');
+      q.textContent = '?';
+      var label = makeDiv('animal-name');
+      label.textContent = '等待你的席位';
+      you.appendChild(q);
+      you.appendChild(label);
+      grid.appendChild(you);
+    }
+
     /* ============================================================
        二、开屏信封
        ============================================================ */
@@ -249,6 +325,7 @@
         $('#invitation').removeAttribute('aria-hidden');
         document.body.classList.remove('lock');
         $('#music-toggle').hidden = false;
+        showTools();
         revealHero();
         setTimeout(function () { screen.style.display = 'none'; }, 500);
       }, 1350);
@@ -261,15 +338,17 @@
       $('#invitation').removeAttribute('aria-hidden');
       document.body.classList.remove('lock');
       $('#music-toggle').hidden = false;
+      showTools();
     }
 
     /* ============================================================
-       三、背景音乐：内置 8-bit 卡农小曲 / 自己的 mp3
+       三、背景音乐：自己的 mp3 / 内置 8-bit 卡农小曲
+          文件加载失败自动切换合成器；淡入淡出；切后台自动暂停
        ============================================================ */
     var music = (function () {
       var hasFile = !!(C.music && C.music.src);
       var audioEl = null, ctx = null, master = null, timer = null;
-      var nextTime = 0, step = 0, playing = false;
+      var nextTime = 0, step = 0, playing = false, fileDead = false;
 
       var NOTE = {
         'F#5': 739.99, 'E5': 659.25, 'D5': 587.33, 'C#5': 554.37,
@@ -324,14 +403,7 @@
         }
       }
 
-      function start() {
-        if (playing) return;
-        playing = true;
-        if (hasFile) {
-          if (!audioEl) { audioEl = new Audio(C.music.src); audioEl.loop = true; }
-          audioEl.play().catch(function () { /* 浏览器拦截，用户可点右上角音符再试 */ });
-          return;
-        }
+      function startSynth() {
         initCtx();
         if (!ctx) return;
         if (ctx.state === 'suspended') ctx.resume();
@@ -339,17 +411,77 @@
         timer = setInterval(tick, 120);
       }
 
+      function stopSynth() {
+        if (timer) { clearInterval(timer); timer = null; }
+      }
+
+      /* 音量平滑渐变（mp3 用） */
+      function fadeTo(target, ms) {
+        if (!audioEl) return;
+        var startVol = audioEl.volume;
+        var t0 = performance.now();
+        var stepF = function (now) {
+          var p = Math.min(1, (now - t0) / ms);
+          audioEl.volume = startVol + (target - startVol) * p;
+          if (p < 1) requestAnimationFrame(stepF);
+        };
+        requestAnimationFrame(stepF);
+      }
+
+      function syncUI(on) {
+        $('#music-toggle').classList.toggle('off', !on);
+        var ft = $('#ft-music');
+        if (ft) ft.classList.toggle('off', !on);
+      }
+
+      function start() {
+        if (playing) return;
+        playing = true;
+        syncUI(true);
+        if (hasFile && !fileDead) {
+          if (!audioEl) {
+            audioEl = new Audio(C.music.src);
+            audioEl.loop = true;
+            audioEl.volume = 0;
+            audioEl.onerror = function () {           // mp3 加载失败 → 切合成器
+              fileDead = true;
+              if (playing) startSynth();
+            };
+          }
+          audioEl.play().then(function () { fadeTo(0.9, 900); })
+            .catch(function () {                       // 播放被拦/失败 → 切合成器
+              fileDead = true;
+              if (playing) startSynth();
+            });
+          return;
+        }
+        startSynth();
+      }
+
       function stop() {
         if (!playing) return;
         playing = false;
-        if (timer) { clearInterval(timer); timer = null; }
+        syncUI(false);
+        stopSynth();
         if (audioEl) audioEl.pause();
       }
 
       function toggle() {
-        if (playing) { stop(); $('#music-toggle').classList.add('off'); }
-        else { start(); $('#music-toggle').classList.remove('off'); }
+        if (playing) stop();
+        else start();
       }
+
+      /* 切后台自动暂停，回来恢复 */
+      var resumeAfter = false;
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          resumeAfter = playing;
+          if (playing) stop();
+        } else if (resumeAfter) {
+          resumeAfter = false;
+          start();
+        }
+      });
 
       return { start: start, stop: stop, toggle: toggle };
     })();
@@ -640,6 +772,20 @@
         notice.appendChild(body);
       }
 
+      /* 今日行程 */
+      buildSchedule();
+
+      /* 交通指引两张小卡片 */
+      var tr = C.transport || {};
+      if (!tr.public && !tr.car) {
+        $('#info .transport-grid').classList.add('hidden');
+      } else {
+        $('#transport-bus').appendChild(PixelArt.sprite('bus', 3));
+        $('#transport-car').appendChild(PixelArt.sprite('car', 3));
+        $('#transport-public').textContent = tr.public || '';
+        $('#transport-car-text').textContent = tr.car || '';
+      }
+
       /* 婚礼月历（婚礼日高亮） */
       buildCalendar();
 
@@ -686,12 +832,21 @@
 
     /* ============================================================
        九、出席回执（Supabase；专属邀请自动填姓名并关联嘉宾）
+           支持住宿登记、修改回执（本机已提交过则先删旧再插新）
        ============================================================ */
     function buildRSVP() {
       var form = $('#rsvp-form');
       var successBox = $('#rsvp-success');
       var counterEl = $('#rsvp-counter');
       var countEl = $('#rsvp-count');
+      var errorEl = $('#rsvp-error');
+      var submitBtn = $('#rsvp-submit');
+      var msgEl = $('#rsvp-msg');
+      var msgCount = $('#rsvp-msg-count');
+
+      var STORAGE_KEY = 'pixel-wedding-rsvp';
+      var savedRsvp = null;
+      try { savedRsvp = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { savedRsvp = null; }
 
       if (!supabase) {
         form.classList.add('hidden');
@@ -710,16 +865,45 @@
       /* 专属邀请：预填姓名 */
       if (guest && guest.name) $('#rsvp-name').value = guest.name;
 
-      /* 参加与否胶囊 */
+      function showError(msg) { errorEl.textContent = msg; errorEl.hidden = false; }
+      function clearError() { errorEl.hidden = true; }
+
+      /* 参加与否胶囊（缺席时隐藏人数和住宿） */
       var pills = $all('#rsvp-attending label');
       var countField = $('#rsvp-count-field');
+      var accField = $('#rsvp-accommodation-field');
       pills.forEach(function (lbl) {
         lbl.addEventListener('click', function () {
           pills.forEach(function (x) { x.classList.remove('checked'); });
           lbl.classList.add('checked');
-          countField.classList.toggle('hidden', lbl.getAttribute('data-val') === 'no');
+          var no = lbl.getAttribute('data-val') === 'no';
+          countField.classList.toggle('hidden', no);
+          accField.classList.toggle('hidden', no);
         });
       });
+
+      /* 住宿胶囊：选“需要”才显示入住/退房时间 */
+      var accPills = $all('#rsvp-accommodation label');
+      var datesBox = $('#accommodation-dates');
+      function updateAccommodation() {
+        var checked = accPills.filter(function (x) { return x.classList.contains('checked'); })[0];
+        var needs = !!(checked && checked.getAttribute('data-val') === 'yes');
+        datesBox.hidden = !needs;
+        if (!needs) {
+          $('#rsvp-checkin').value = '';
+          $('#rsvp-checkout').value = '';
+        }
+      }
+      accPills.forEach(function (lbl) {
+        lbl.addEventListener('click', function () {
+          accPills.forEach(function (x) { x.classList.remove('checked'); });
+          lbl.classList.add('checked');
+          updateAccommodation();
+        });
+      });
+
+      /* 留言字数统计 */
+      msgEl.addEventListener('input', function () { msgCount.textContent = msgEl.value.length; });
 
       /* 人数步进 */
       var stepperVal = $('#stepper-val');
@@ -734,46 +918,136 @@
       });
 
       /* 提交 */
-      var submitBtn = $('#rsvp-submit');
       form.addEventListener('submit', function (e) {
         e.preventDefault();
+        clearError();
         var name = $('#rsvp-name').value.trim();
         var phone = $('#rsvp-phone').value.trim();
         var attending = pills.filter(function (x) { return x.classList.contains('checked'); })[0].getAttribute('data-val') === 'yes';
-        var msg = $('#rsvp-msg').value.trim();
+        var msg = msgEl.value.trim();
+        var needsAcc = attending && accPills.filter(function (x) { return x.classList.contains('checked'); })[0].getAttribute('data-val') === 'yes';
+        var checkIn = $('#rsvp-checkin').value;
+        var checkOut = $('#rsvp-checkout').value;
 
-        if (!name) { toast('请先告诉我们您的姓名 ♥'); return; }
-        if (phone && !/^1\d{10}$/.test(phone)) { toast('手机号好像不太对，再检查一下？'); return; }
+        if (!name) { showError('请先告诉我们您的姓名 ♥'); $('#rsvp-name').focus(); return; }
+        if (phone && !/^1\d{10}$/.test(phone)) { showError('手机号好像不太对，再检查一下？'); return; }
+        if (needsAcc && (!checkIn || !checkOut)) { showError('请填写完整的住宿时间。'); return; }
+        if (needsAcc && checkOut <= checkIn) { showError('退房时间必须晚于入住时间。'); return; }
 
-        submitBtn.disabled = true;
-        supabase.from('rsvp').insert([{
+        var row = {
           guest_id: (guest && guest.id) || null,
           name: name,
           phone: phone || null,
           attending: attending,
           guest_count: attending ? guestCount : 0,
-          message: msg || null
-        }]).then(function (r) {
+          message: msg || null,
+          needs_accommodation: needsAcc ? 'yes' : 'no',
+          check_in_at: needsAcc ? checkIn.replace('T', ' ') : null,
+          check_out_at: needsAcc ? checkOut.replace('T', ' ') : null,
+          edit_token: (savedRsvp && savedRsvp.editToken) || (Math.random().toString(36).slice(2) + Date.now().toString(36))
+        };
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '正在送往山谷……';
+
+        /* 本机改过回执：先凭编辑凭证删旧行再插新行（避免重复） */
+        var chain = Promise.resolve();
+        if (savedRsvp && savedRsvp.id && savedRsvp.editToken) {
+          chain = supabase.rpc('delete_rsvp', { p_id: savedRsvp.id, p_token: savedRsvp.editToken })
+            .then(function () { /* 忽略删除结果 */ });
+        }
+        chain.then(function () {
+          return supabase.from('rsvp').insert([row]);
+        }).then(function (r) {
           submitBtn.disabled = false;
-          if (r.error) { toast('提交失败，请检查网络后重试'); return; }
-          form.classList.add('hidden');
-          successBox.classList.remove('hidden');
-          $('#rsvp-success-text').textContent = attending ? '收到你的祝福啦！♥' : '收到啦，期待下次相聚 ♥';
+          submitBtn.textContent = '✉ 提交回执';
+          if (r.error) { showError('提交失败，请检查网络后重试'); return; }
+          savedRsvp = {
+            id: (r.data && r.data[0] && r.data[0].id) || null,
+            editToken: row.edit_token,
+            name: name, attending: attending, guestCount: guestCount,
+            needsAcc: needsAcc, checkIn: checkIn, checkOut: checkOut
+          };
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRsvp)); } catch (e2) { /* 忽略 */ }
+          showSuccess(savedRsvp);
           refreshCount();
         });
       });
 
+      /* 成功页摘要 */
+      function showSuccess(s) {
+        form.classList.add('hidden');
+        successBox.classList.remove('hidden');
+        $('#rsvp-success-text').textContent = s.attending ? '收到你的祝福啦！♥' : '收到啦，期待下次相聚 ♥';
+        var summary = $('#rsvp-success-summary');
+        if (s.attending) {
+          var acc = s.needsAcc
+            ? '住宿：' + (s.checkIn || '').replace('T', ' ') + ' 至 ' + (s.checkOut || '').replace('T', ' ')
+            : '无需住宿';
+          summary.textContent = '已为你预留 ' + s.guestCount + ' 个席位 · ' + acc;
+          summary.hidden = false;
+        } else {
+          summary.hidden = true;
+        }
+        $('#rsvp-edit').hidden = !(savedRsvp && savedRsvp.id);
+      }
+
+      /* 用已保存的回执回填表单 */
+      function fillFormFrom(s) {
+        $('#rsvp-name').value = s.name || (guest && guest.name) || '';
+        var attendVal = s.attending ? 'yes' : 'no';
+        pills.forEach(function (x) {
+          var on = x.getAttribute('data-val') === attendVal;
+          x.classList.toggle('checked', on);
+          var input = x.querySelector('input');
+          if (input) input.checked = on;
+        });
+        countField.classList.toggle('hidden', attendVal === 'no');
+        accField.classList.toggle('hidden', attendVal === 'no');
+        guestCount = s.guestCount || 1;
+        stepperVal.textContent = guestCount;
+        var accVal = s.needsAcc ? 'yes' : 'no';
+        accPills.forEach(function (x) {
+          var on = x.getAttribute('data-val') === accVal;
+          x.classList.toggle('checked', on);
+          var input = x.querySelector('input');
+          if (input) input.checked = on;
+        });
+        $('#rsvp-checkin').value = s.checkIn || '';
+        $('#rsvp-checkout').value = s.checkOut || '';
+        updateAccommodation();
+        msgCount.textContent = msgEl.value.length;
+      }
+
+      /* 修改我的回执 */
+      $('#rsvp-edit').addEventListener('click', function () {
+        if (!savedRsvp) return;
+        fillFormFrom(savedRsvp);
+        successBox.classList.add('hidden');
+        form.classList.remove('hidden');
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      /* 再填一份（帮家人报名）：不动 savedRsvp，提交会新增一行 */
       $('#rsvp-again').addEventListener('click', function () {
         successBox.classList.add('hidden');
         form.classList.remove('hidden');
         form.reset();
+        clearError();
         pills.forEach(function (x) { x.classList.remove('checked'); });
         pills[0].classList.add('checked');
+        accPills.forEach(function (x) { x.classList.remove('checked'); });
         countField.classList.remove('hidden');
+        accField.classList.remove('hidden');
         guestCount = 1;
         stepperVal.textContent = '1';
+        msgCount.textContent = '0';
+        updateAccommodation();
         if (guest && guest.name) $('#rsvp-name').value = guest.name;
       });
+
+      /* 本机已提交过：回填表单，方便“修改我的回执” */
+      if (savedRsvp && savedRsvp.id) fillFormFrom(savedRsvp);
     }
 
     /* ============================================================
@@ -792,10 +1066,11 @@
     }
 
     /* ============================================================
-       十一、入场动画
+       十一、入场动画（尊重系统“减弱动态效果”）
        ============================================================ */
     function buildReveal() {
-      if (!('IntersectionObserver' in window)) {
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!('IntersectionObserver' in window) || reduced) {
         $all('#invitation .reveal').forEach(function (el) { el.classList.add('visible'); });
         return;
       }
@@ -808,6 +1083,44 @@
         });
       }, { threshold: 0.12 });
       $all('#invitation .reveal').forEach(function (el) { io.observe(el); });
+    }
+
+    /* ---------- 离屏区块暂停动画（省电） ---------- */
+    function buildAnimationPause() {
+      if (!('IntersectionObserver' in window)) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          en.target.classList.toggle('animations-paused', !en.isIntersecting);
+        });
+      }, { rootMargin: '15% 0px' });
+      $all('#invitation .section, #hero, footer').forEach(function (el) { io.observe(el); });
+    }
+
+    /* ---------- 浮动工具栏 + 回到开头 ---------- */
+    function buildTools() {
+      var ft = $('#floating-tools');
+      var ftMusic = $('#ft-music');
+      ftMusic.appendChild(PixelArt.sprite('note', 5));
+      ftMusic.addEventListener('click', music.toggle);
+      var ftInfo = $('#ft-info');
+      ftInfo.appendChild(PixelArt.sprite('pin', 5));
+      ftInfo.addEventListener('click', function () {
+        $('#info').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      var ftRsvp = $('#ft-rsvp');
+      ftRsvp.appendChild(PixelArt.sprite('heartSm', 5));
+      ftRsvp.addEventListener('click', function () {
+        $('#rsvp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      $('#back-top-btn').addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    /* ---------- 打开信封后亮出浮动工具栏 ---------- */
+    function showTools() {
+      $('#floating-tools').hidden = false;
     }
 
     /* ============================================================
@@ -825,9 +1138,13 @@
       buildGallery();
       buildCountdown();
       buildInfo();
+      buildQuest();
+      buildGuests();
       buildRSVP();
       buildShare();
       buildReveal();
+      buildAnimationPause();
+      buildTools();
 
       /* 音乐开关 */
       var toggle = $('#music-toggle');

@@ -52,6 +52,7 @@
     gold: '#ffc94d', goldShade: '#d9b45a', straw: '#f4d06f',
     grass: '#6dbe45', grassDark: '#4e9a3a',
     blue: '#4a7fd4', blueDark: '#3a66ae',
+    orange: '#ff9a3c', orangeDark: '#e07b1f',
     white: '#ffffff', strawDark: '#d9b45a'
   };
 
@@ -381,6 +382,175 @@
         '..G..G..G.',
         '.GG.GG.GGG',
         'GGGGGGGGGG'
+      ]
+    },
+
+    /* ---------- 原创山谷元素（交通/动物/礼物） ---------- */
+
+    /* 巴士 16×9（公共交通） */
+    bus: {
+      palette: { B: P.blue, b: P.blueDark, W: P.paper, O: P.ink },
+      grid: [
+        '....BBBBBBBB....',
+        '...BBBBBBBBBB...',
+        '..BBWWBBBBWWBB..',
+        '..BBWWBBBBWWBB..',
+        '..BBBBBBBBBBBB..',
+        '..BBBBBBBBBBBB..',
+        '...BBBBBBBBBB...',
+        '...OO......OO...',
+        '...OO......OO...'
+      ]
+    },
+
+    /* 小车 14×7（自驾） */
+    car: {
+      palette: { R: P.red, r: P.redDark, W: P.paper, O: P.ink },
+      grid: [
+        '....RRRRRRRR....',
+        '...RRRRRRRRRR...',
+        '..RRWWRRRRWWRR..',
+        '..RRRRRRRRRRRR..',
+        '..RRRRRRRRRRRR..',
+        '...RRRRRRRRRR...',
+        '...OO......OO...'
+      ]
+    },
+
+    /* 小鸡 10×10 */
+    chicken: {
+      palette: { R: P.red, W: P.white, E: P.ink, Y: P.gold, O: P.inkSoft },
+      grid: [
+        '....RR....',
+        '...RRRR...',
+        '...WWWW...',
+        '..WWWWWW..',
+        '..WEWWEW..',
+        '..WWWWWW..',
+        '...WYYW...',
+        '...WWWW...',
+        '...O..O...',
+        '...O..O...'
+      ]
+    },
+
+    /* 奶牛 12×10 */
+    cow: {
+      palette: { Y: P.straw, E: P.inkSoft, B: P.ink, W: P.white, O: P.ink },
+      grid: [
+        '...Y......Y...',
+        '..EEEEEEEEEE..',
+        '..BWWWBBWWWB..',
+        '..BWWWBBWWWB..',
+        '...WWWWWWWW...',
+        '..WWWWWWWWWW..',
+        '..WWBBWWBBWW..',
+        '..WWWWWWWWWW..',
+        '..WWWWWWWWWW..',
+        '..OO......OO..'
+      ]
+    },
+
+    /* 橘猫 10×8 */
+    cat: {
+      palette: { O: P.orange, o: P.orangeDark, W: P.cream, E: P.ink, N: P.pink },
+      grid: [
+        '.OO....OO.',
+        '.OOOOOOOO.',
+        '.OWWWWWWO.',
+        '.OWEWWEWO.',
+        '.OWWWWWWO.',
+        '..OWWNNWO.',
+        '..OOOOOO..',
+        '..OO..OO..'
+      ]
+    },
+
+    /* 小狗 11×9 */
+    dog: {
+      palette: { E: P.inkSoft, e: P.ink, W: P.cream, N: P.pink },
+      grid: [
+        '..E.....E..',
+        '..EE...EE..',
+        '.EEEEEEEEE.',
+        '.EWWWWWWWE.',
+        '.EWEWWWEWE.',
+        '.EWWWWWWWE.',
+        '..EWWNNWE..',
+        '..EEEEEEEE.',
+        '..EE....EE.'
+      ]
+    },
+
+    /* 婚戒 8×6 */
+    ring: {
+      palette: { G: P.gold, g: P.goldShade, D: P.white },
+      grid: [
+        '..GGGG..',
+        '.G....G.',
+        'G..D...G',
+        'G......G',
+        '.G....G.',
+        '..GGGG..'
+      ]
+    },
+
+    /* 草莓 8×8 */
+    strawberry: {
+      palette: { R: P.red, r: P.redDark, G: P.grassDark, W: P.paper },
+      grid: [
+        '...GG...',
+        '..GGGG..',
+        '..RRRR..',
+        '.RRRRRR.',
+        '.RWRRWR.',
+        'RRRWRRWR',
+        '.RRRRRR.',
+        '..RRRR..'
+      ]
+    },
+
+    /* 蓝莓 7×6 */
+    blueberry: {
+      palette: { B: P.blue, b: P.blueDark, G: P.grassDark },
+      grid: [
+        '..GGG..',
+        '.BBBBB.',
+        'BBBbBBB',
+        'BBbBBBB',
+        '.BBBBB.',
+        '..BBB..'
+      ]
+    },
+
+    /* 胡萝卜 7×9 */
+    carrot: {
+      palette: { O: P.orange, o: P.orangeDark, G: P.grass },
+      grid: [
+        '..GGG..',
+        '.GGGGG.',
+        '..OOO..',
+        '..OOo..',
+        '..OOO..',
+        '.OOoOO.',
+        '.OOOOo.',
+        '..OOo..',
+        '...O...'
+      ]
+    },
+
+    /* 南瓜 10×8 */
+    pumpkin: {
+      palette: { O: P.orange, o: P.orangeDark, G: P.grassDark },
+      grid: [
+        '..GGGGG...',
+        '...GGG....',
+        '.OOoOOOoO.',
+        'OoOOOoOOoO',
+        'OOoOOOoOOO',
+        'OOoOOOoOOO',
+        '.OOOoOOoO.',
+        '..OOoOOO..'
       ]
     }
   };

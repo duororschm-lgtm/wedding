@@ -206,6 +206,7 @@
     var v = data.venue || {};
     var s = data.share || {};
     var m = data.music || {};
+    var tr = data.transport || {};
     $('#ed-groom').value = c.groom || '';
     $('#ed-bride').value = c.bride || '';
     $('#ed-groom-nick').value = c.groomNick || '';
@@ -221,10 +222,34 @@
     $('#ed-lng').value = v.lng == null ? '' : v.lng;
     $('#ed-lat').value = v.lat == null ? '' : v.lat;
     $('#ed-venue-notice').value = v.notice || '';
+    $('#ed-schedule').value = scheduleToText(data.schedule);
+    $('#ed-transport-public').value = tr.public || '';
+    $('#ed-transport-car').value = tr.car || '';
     $('#ed-share-title').value = s.title || '';
     $('#ed-share-desc').value = s.desc || '';
     $('#ed-music').value = m.src || '';
     $('#ed-story').value = storyToText(data.story);
+  }
+
+  /* 行程：数据库存 [{time, label, desc}]，表单里是每行「时间|环节|说明」 */
+  function scheduleToText(arr) {
+    return (arr || []).map(function (s) {
+      return (s.time || '') + '|' + (s.label || '') + '|' + (s.desc || '');
+    }).join('\n');
+  }
+  function textToSchedule(str) {
+    var out = [];
+    String(str || '').split('\n').forEach(function (line) {
+      var t = line.trim();
+      if (!t) return;
+      var parts = t.split('|');
+      var time = (parts[0] || '').trim();
+      var label = (parts[1] || '').trim();
+      var desc = (parts[2] || '').trim();
+      if (!label && !desc) return;
+      out.push({ time: time, label: label, desc: desc });
+    });
+    return out;
   }
 
   /* 故事：数据库存 [{speaker, text}]，表单里是每行「发言者|内容」（发言者留空 = 旁白） */
@@ -274,6 +299,11 @@
         lng: numVal('#ed-lng'),
         lat: numVal('#ed-lat'),
         notice: $('#ed-venue-notice').value.trim()
+      },
+      schedule: textToSchedule($('#ed-schedule').value),
+      transport: {
+        public: $('#ed-transport-public').value.trim(),
+        car: $('#ed-transport-car').value.trim()
       },
       story: textToStory($('#ed-story').value),
       share: {
@@ -666,6 +696,11 @@
       tdA.appendChild(badge);
       var tdC = document.createElement('td');
       tdC.textContent = row.attending ? (row.guest_count || 1) : '—';
+      var tdAcc = document.createElement('td');
+      tdAcc.className = 'msg';
+      tdAcc.textContent = row.attending && row.needs_accommodation === 'yes'
+        ? (row.check_in_at || '') + ' 至 ' + (row.check_out_at || '')
+        : (row.attending ? '无需' : '—');
       var tdM = document.createElement('td');
       tdM.className = 'msg';
       tdM.textContent = row.message || '';
@@ -690,6 +725,7 @@
       tr.appendChild(tdP);
       tr.appendChild(tdA);
       tr.appendChild(tdC);
+      tr.appendChild(tdAcc);
       tr.appendChild(tdM);
       tr.appendChild(tdS);
       tr.appendChild(tdD);
@@ -720,12 +756,15 @@
   }
   $('#board-export').addEventListener('click', function () {
     if (!rsvpCache.length) { toast('还没有回执可以导出'); return; }
-    var lines = ['姓名,电话,出席,人数,留言,时间,来源'];
+    var lines = ['姓名,电话,出席,人数,住宿,留言,时间,来源'];
     rsvpCache.forEach(function (row) {
       var from = (row.guest_id != null && guestsMap[row.guest_id]) ? '专属链接·' + guestsMap[row.guest_id].name : '公开链接';
+      var acc = row.attending && row.needs_accommodation === 'yes'
+        ? (row.check_in_at || '') + ' 至 ' + (row.check_out_at || '')
+        : (row.attending ? '无需' : '');
       lines.push([
         esc(row.name), esc(row.phone), row.attending ? '出席' : '缺席',
-        row.attending ? (row.guest_count || 1) : 0, esc(row.message), fmtTime(row.created_at), esc(from)
+        row.attending ? (row.guest_count || 1) : 0, esc(acc), esc(row.message), fmtTime(row.created_at), esc(from)
       ].join(','));
     });
     var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });

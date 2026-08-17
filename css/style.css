@@ -552,6 +552,59 @@ main { max-width: 560px; margin: 0 auto; }
 }
 .cal-wed-mark { font-size: 12px; line-height: 1.3; letter-spacing: 0; white-space: nowrap; }
 
+/* 今日行程（序号徽章 + 时间 + 说明） */
+.mini-heading {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin: 26px 0 14px;
+  font-size: 24px; letter-spacing: 3px;
+}
+.mini-heading-icon {
+  width: 44px; height: 44px;
+  background: var(--cream-2);
+  border: 3px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
+.schedule-grid { display: grid; gap: 10px; }
+.schedule-item {
+  display: flex; gap: 14px; align-items: center;
+  background: var(--paper);
+  border: var(--border);
+  border-color: var(--ink) var(--wood-dark) var(--wood-dark) var(--wood);
+  box-shadow: 0 5px 0 rgba(74, 47, 29, 0.55);
+  padding: 12px 16px;
+}
+.schedule-index {
+  flex: none;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--red);
+  color: var(--paper);
+  border: 3px solid var(--red-dark);
+  font-size: 24px;
+}
+.schedule-body { min-width: 0; }
+.schedule-body b { display: block; font-size: 24px; font-weight: normal; color: var(--red-dark); letter-spacing: 2px; }
+.schedule-body b small { display: block; margin-top: 2px; font-size: 18px; color: var(--ink-soft); letter-spacing: 1px; }
+.schedule-body p { font-size: 20px; line-height: 1.6; word-break: break-word; }
+
+/* 交通指引双卡 */
+.transport-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin: 26px 0 8px;
+}
+.transport-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--paper);
+  border: var(--border);
+  border-color: var(--ink) var(--wood-dark) var(--wood-dark) var(--wood);
+  box-shadow: 0 5px 0 rgba(74, 47, 29, 0.55);
+  padding: 14px 8px;
+  text-align: center;
+}
+.transport-icon { display: flex; align-items: center; justify-content: center; height: 44px; }
+.transport-cell b { font-size: 22px; font-weight: normal; letter-spacing: 2px; }
+.transport-text { font-size: 18px; line-height: 1.6; color: var(--ink-soft); word-break: break-word; }
+
 /* 倒计时 */
 #countdown {
   display: flex;
@@ -598,6 +651,7 @@ main { max-width: 560px; margin: 0 auto; }
 }
 .field input[type="text"],
 .field input[type="tel"],
+.field input[type="datetime-local"],
 .field textarea {
   width: 100%;
   font-family: inherit;
@@ -676,6 +730,30 @@ main { max-width: 560px; margin: 0 auto; }
 }
 .rsvp-success .big-heart { animation: heartbeat 1.5s ease-in-out infinite; }
 .rsvp-success p { margin-top: 18px; font-size: 30px; letter-spacing: 4px; }
+.rsvp-success .rsvp-summary { margin-top: 16px; font-size: 20px; letter-spacing: 2px; color: var(--ink-soft); line-height: 1.8; word-break: break-word; }
+
+/* 住宿单选胶囊 */
+.accommodation-pills label { font-size: 22px; }
+
+/* 留言字数统计 */
+.msg-count { display: block; text-align: right; margin-top: 6px; font-size: 18px; color: var(--ink-soft); }
+.msg-count b { color: var(--red); font-weight: normal; }
+
+/* 表单内联错误 */
+.rsvp-error {
+  margin: 4px 0 16px;
+  padding: 10px 14px;
+  border: 3px solid #7b303c;
+  background: #f6c9cf;
+  color: #7b303c;
+  font-size: 20px;
+  line-height: 1.6;
+  text-align: center;
+}
+#rsvp-error[hidden] { display: none; }
+
+/* 隐私说明 */
+.form-note { margin-top: 14px; text-align: center; font-size: 16px; line-height: 1.7; color: var(--ink-soft); letter-spacing: 1px; }
 
 /* ============================================================
    页脚
@@ -808,17 +886,209 @@ body.night .tree-line img, body.night .scene-divider svg { filter: brightness(0.
 body.night .grass-band { background: #2e4f2a; }
 body.night .grass-tufts svg { filter: brightness(0.7); }
 body.night .sun { display: none; }
-body.night .stars { display: none; }          /* 星空由 night-sky 背景图提供 */
+body.night .stars { display: block; animation: twinkle 3s ease-in-out infinite; }   /* 叠加在 night-sky 图上闪烁 */
 body.night .moon { display: block; }
 body.night .cloud-1 svg, body.night .cloud-2 svg { filter: brightness(0.55); }
 body.night .couple svg, body.night .heart-float svg { filter: brightness(0.75); }
 body.night .hero-guest { background: #6e2f4a; border-color: #ffb3c1 #2c1a30 #2c1a30 #f78da1; }
 
 /* ============================================================
+   任务卡（紫色夜晚区块）
+   ============================================================ */
+
+.quest-section {
+  margin: 0 calc(50% - 50vw);          /* 全宽铺紫，内容仍居中 */
+  padding: 64px 0 24px;
+  background:
+    radial-gradient(circle, #6b5488 1px, transparent 2px) 0 0 / 23px 23px,
+    linear-gradient(180deg, #45306b, #2a1b40 55%, #382443);
+}
+.quest-section .sec-title { color: #fff1bd; text-shadow: 0 4px 0 rgba(0, 0, 0, 0.5); }
+.quest-section .heart { filter: brightness(1.2); }
+
+.quest-card {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 44px 24px 20px;
+  background: #352148;
+  border: 6px solid #a36e4c;
+  outline: 4px solid #4e2942;
+  box-shadow: inset 0 0 0 3px #765274, 0 8px 0 rgba(29, 19, 41, 0.9);
+  color: #faecd1;
+}
+.quest-pin {
+  position: absolute; top: -26px; left: 50%;
+  transform: translateX(-50%);
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border: 5px solid #ffbd65;
+  color: #fff;
+  background: #c84e64;
+  box-shadow: 0 4px 0 #21152c;
+  font-size: 36px;
+  animation: bob 2s ease-in-out infinite;
+}
+.quest-card > p { font-size: 22px; line-height: 1.9; margin-bottom: 18px; }
+.quest-list {
+  list-style: none;
+  display: grid; gap: 14px;
+  padding: 16px 0;
+  border-top: 2px dashed #805979;
+  border-bottom: 2px dashed #805979;
+}
+.quest-list li {
+  display: grid;
+  grid-template-columns: 32px 64px 1fr;
+  gap: 6px; align-items: center;
+  font-size: 20px; line-height: 1.7;
+}
+.quest-list .quest-star { display: flex; align-items: center; justify-content: center; }
+.quest-list b { color: #ffc57d; font-size: 22px; letter-spacing: 2px; }
+.quest-list span:last-child { color: #faecd1; word-break: break-word; }
+.quest-reward {
+  margin-top: 16px;
+  padding: 12px 8px;
+  border: 3px solid #7c5579;
+  background: #281a37;
+  color: #ffe893;
+  text-align: center;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+/* ============================================================
+   山谷友人（祝福信 + 礼物栏 + 动物席位墙）
+   ============================================================ */
+
+.blessing-card {
+  margin: 0 20px;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: 0 6px 0 rgba(74, 47, 29, 0.6);
+  padding: 24px 20px;
+  text-align: center;
+}
+.blessing-title {
+  display: inline-block;
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  padding: 4px 20px;
+  margin-bottom: 16px;
+  font-size: 22px;
+  letter-spacing: 3px;
+}
+.blessing-card p { font-size: 22px; line-height: 2; }
+
+/* 礼物栏（像游戏背包格子） */
+.inventory-row {
+  margin: 20px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background: var(--wood);
+  border: var(--border);
+  box-shadow: 0 6px 0 rgba(74, 47, 29, 0.6);
+}
+.gift-cell {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: inset 3px 3px 0 rgba(138, 91, 43, 0.35);
+}
+
+/* 动物席位墙 */
+.animal-grid {
+  margin: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 12px;
+  background: var(--wood);
+  border: var(--border);
+  box-shadow: 0 6px 0 rgba(74, 47, 29, 0.6);
+}
+.animal-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  padding: 12px 4px 8px;
+}
+.animal-icon { display: flex; align-items: center; justify-content: center; min-height: 72px; }
+.animal-name { font-size: 20px; letter-spacing: 2px; }
+.animal-cell.you {
+  background: #463450;
+  color: #ffd46a;
+  justify-content: center;
+  min-height: 130px;
+}
+.animal-cell.you > span { font-size: 44px; line-height: 1.2; }
+
+/* ============================================================
+   浮动工具栏 + 动效优化
+   ============================================================ */
+
+.floating-tools {
+  position: fixed;
+  right: 14px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  display: grid;
+  gap: 10px;
+}
+#floating-tools[hidden] { display: none; }
+.tool-slot {
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cream);
+  border: 4px solid;
+  border-color: var(--paper) var(--wood-dark) var(--wood-dark) var(--wood);
+  box-shadow: var(--shadow-btn);
+  cursor: pointer;
+  position: relative;
+}
+.tool-slot:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+.tool-slot svg { display: block; }
+.tool-slot.off svg { opacity: 0.45; }
+.tool-slot.off::after {
+  content: "";
+  position: absolute;
+  width: 46px; height: 5px;
+  background: var(--red);
+  border: 1px solid var(--ink);
+  transform: rotate(-45deg);
+}
+
+/* 离屏区块暂停动画（省电） */
+.animations-paused *, .animations-paused *::before, .animations-paused *::after {
+  animation-play-state: paused !important;
+}
+
+/* 键盘焦点可见 */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 4px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ============================================================
    其他
    ============================================================ */
 
 .hidden { display: none !important; }
+
+/* 系统“减弱动态效果”：全部动画关闭 */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
 
 @media (max-width: 400px) {
   body { font-size: 20px; }

@@ -89,6 +89,23 @@
         </div>
 
         <div class="panel editor-panel">
+          <h2 class="editor-sub">今日行程</h2>
+          <div class="field">
+            <label for="ed-schedule">行程安排（每行一项）</label>
+            <textarea id="ed-schedule" rows="5"></textarea>
+          </div>
+          <p class="editor-hint">每行一项，格式：时间|环节|说明。例如：10:30|签到|领取今日任务，与老朋友相见。留空则不显示行程。</p>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">交通指引</h2>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-transport-public">公共交通</label><input type="text" id="ed-transport-public" maxlength="40" placeholder="例如：地铁 XX 站下车后打车前往"></div>
+            <div class="field"><label for="ed-transport-car">自驾前往</label><input type="text" id="ed-transport-car" maxlength="40" placeholder="例如：导航至酒店停车场"></div>
+          </div>
+        </div>
+
+        <div class="panel editor-panel">
           <h2 class="editor-sub">故事对话</h2>
           <div class="field">
             <label for="ed-story">对话内容（每行一句）</label>
@@ -173,7 +190,7 @@
           <div class="admin-table-wrap">
             <table class="admin-table">
               <thead>
-                <tr><th>时间</th><th>姓名</th><th>电话</th><th>出席</th><th>人数</th><th>留言</th><th>来源</th><th></th></tr>
+                <tr><th>时间</th><th>姓名</th><th>电话</th><th>出席</th><th>人数</th><th>住宿</th><th>留言</th><th>来源</th><th></th></tr>
               </thead>
               <tbody id="board-tbody"></tbody>
             </table>

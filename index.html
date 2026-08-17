@@ -100,10 +100,31 @@
           </div>
         </div>
         <div class="info-notice" id="info-notice" hidden></div>
+        <div class="mini-heading" id="schedule-heading"><span class="mini-heading-icon" data-icon="calendar"></span><span>今日行程</span></div>
+        <div class="schedule-grid" id="schedule-grid"></div>
+        <div class="transport-grid">
+          <div class="transport-cell"><span class="transport-icon" id="transport-bus"></span><b>公共交通</b><span class="transport-text" id="transport-public"></span></div>
+          <div class="transport-cell"><span class="transport-icon" id="transport-car"></span><b>自驾前往</b><span class="transport-text" id="transport-car-text"></span></div>
+        </div>
         <div class="wedding-cal" id="wedding-cal" aria-label="婚礼月历"></div>
         <a class="btn btn-wood btn-block" id="map-btn" target="_blank" rel="noopener"></a>
         <button class="btn btn-block" id="copy-addr-btn" type="button"></button>
         <button class="btn btn-block" id="ics-btn" type="button"></button>
+      </div>
+    </section>
+
+    <!-- 任务卡：参加我们的婚礼 -->
+    <section class="section quest-section" id="quest">
+      <h2 class="sec-title quest-title"><span class="heart" data-heart></span>参加我们的婚礼<span class="heart" data-heart></span></h2>
+      <div class="quest-card reveal">
+        <div class="quest-pin">!</div>
+        <p id="quest-intro">婚礼当日，山谷里吹来了请柬的香气，大家都换好了礼服，准备见证这一天。</p>
+        <ul class="quest-list">
+          <li><span class="quest-star" data-heart></span><b>抵达</b><span id="quest-arrive"></span></li>
+          <li><span class="quest-star" data-heart></span><b>见证</b><span id="quest-witness"></span></li>
+          <li><span class="quest-star" data-heart></span><b>解锁</b><span id="quest-unlock"></span></li>
+        </ul>
+        <div class="quest-reward" id="quest-reward">奖励：永久友谊 +1000　幸福值 MAX</div>
       </div>
     </section>
 
@@ -136,19 +157,52 @@
               <button type="button" id="stepper-plus" aria-label="加一人">＋</button>
             </div>
           </div>
+          <div class="field" id="rsvp-accommodation-field">
+            <label>是否需要住宿 <span class="req">*</span></label>
+            <div class="radio-pills accommodation-pills" id="rsvp-accommodation">
+              <label data-val="yes"><input type="radio" name="needsAccommodation" value="yes">需要住宿</label>
+              <label data-val="no"><input type="radio" name="needsAccommodation" value="no">无需住宿</label>
+            </div>
+          </div>
+          <div id="accommodation-dates" hidden>
+            <div class="field">
+              <label for="rsvp-checkin">入住时间 <span class="req">*</span></label>
+              <input type="datetime-local" id="rsvp-checkin">
+            </div>
+            <div class="field">
+              <label for="rsvp-checkout">退房时间 <span class="req">*</span></label>
+              <input type="datetime-local" id="rsvp-checkout">
+            </div>
+          </div>
           <div class="field">
             <label for="rsvp-msg">祝福留言（选填）</label>
             <textarea id="rsvp-msg" maxlength="200" placeholder="想对我们说的话……"></textarea>
+            <span class="msg-count"><b id="rsvp-msg-count">0</b> / 200</span>
           </div>
+          <p class="rsvp-error" id="rsvp-error" role="alert" hidden></p>
           <button class="btn btn-primary btn-block" id="rsvp-submit" type="submit">✉ 提交回执</button>
+          <p class="form-note">提交即表示同意我们仅为本次婚礼筹备用途保存以上信息。</p>
         </form>
         <div class="rsvp-success hidden" id="rsvp-success">
           <span class="big-heart" data-icon="gift"></span>
           <p id="rsvp-success-text">收到你的祝福啦！♥</p>
-          <button class="btn btn-block" type="button" id="rsvp-again" style="margin-top:24px">再填一份（帮家人报名）</button>
+          <p class="rsvp-summary" id="rsvp-success-summary" hidden></p>
+          <button class="btn btn-block" type="button" id="rsvp-edit" style="margin-top:24px" hidden>修改我的回执</button>
+          <button class="btn btn-block" type="button" id="rsvp-again" style="margin-top:16px">再填一份（帮家人报名）</button>
         </div>
         <p class="hidden" id="rsvp-disabled-hint" style="text-align:center;color:#7a4e2d">回执功能尚未开通，详见 README 说明。</p>
       </div>
+    </section>
+
+    <!-- 山谷友人：祝福信 + 礼物 + 席位墙 -->
+    <section class="section guests-section" id="guests">
+      <h2 class="sec-title guests-title"><span class="heart" data-heart></span>山谷友人<span class="heart" data-heart></span></h2>
+      <div class="blessing-card reveal">
+        <div class="blessing-title">一封来自山谷的信</div>
+        <p id="blessing-text">春风暖，遇良辰。<br>喝满你们的喜酒，听完一年的花。<br>把最好的故事，变成共同的回忆。</p>
+      </div>
+      <div class="inventory-row reveal" id="gift-row" aria-label="婚礼礼物栏"></div>
+      <div class="animal-grid reveal" id="animal-grid" aria-label="山谷动物席位墙"></div>
     </section>
 
     <!-- 页脚 -->
@@ -158,10 +212,18 @@
       <p class="footer-date" id="foot-date"></p>
       <div class="footer-btns">
         <button class="btn" id="share-btn" type="button">✉ 分享请柬</button>
+        <button class="btn" id="back-top-btn" type="button">↑ 回到开头</button>
       </div>
       <p class="footer-note">本请柬由爱与像素驱动 ♥</p>
     </footer>
   </main>
+
+  <!-- 浮动工具栏：音乐 / 信息 / 回执 -->
+  <nav class="floating-tools" id="floating-tools" hidden aria-label="页面工具">
+    <button class="tool-slot" id="ft-music" type="button" aria-label="音乐开关"></button>
+    <button class="tool-slot" id="ft-info" type="button" aria-label="查看婚礼信息"></button>
+    <button class="tool-slot" id="ft-rsvp" type="button" aria-label="填写出席回执"></button>
+  </nav>
 
   <!-- 灯箱 -->
   <div id="lightbox" hidden><img id="lightbox-img" alt="照片大图"></div>

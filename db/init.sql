@@ -14,11 +14,19 @@ create table if not exists public.rsvp (
   attending boolean not null default true,
   guest_count int not null default 1 check (guest_count between 1 and 20),
   message text,
+  needs_accommodation text not null default 'no',
+  check_in_at text,
+  check_out_at text,
+  edit_token text,
   created_at timestamptz not null default now()
 );
 
--- 专属链接的嘉宾回执（老表补这一列，新表直接加上）
+-- 老表补列（重复运行安全）
 alter table public.rsvp add column if not exists guest_id bigint;
+alter table public.rsvp add column if not exists needs_accommodation text not null default 'no';
+alter table public.rsvp add column if not exists check_in_at text;
+alter table public.rsvp add column if not exists check_out_at text;
+alter table public.rsvp add column if not exists edit_token text;
 
 -- ============================================================
 -- ② 嘉宾表（编辑器管理，每人一个专属 token）
@@ -97,6 +105,19 @@ as $$
 $$;
 
 grant execute on function public.get_guest(text) to anon, authenticated;
+
+-- 宾客修改自己的回执：凭提交时拿到的编辑凭证删除旧行
+-- （不开放匿名直接 delete，防止误删别人的回执）
+create or replace function public.delete_rsvp(p_id bigint, p_token text)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from public.rsvp where id = p_id and edit_token = p_token
+$$;
+
+grant execute on function public.delete_rsvp(bigint, text) to anon, authenticated;
 
 -- ============================================================
 -- ⑥ 云存储桶（照片 / 音乐，公开可读，登录者可上传删除）
