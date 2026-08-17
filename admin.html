@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>回执管理 · 婚礼后台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin-body">
+
+  <main class="admin-main">
+
+    <!-- 登录视图 -->
+    <div id="admin-login" class="admin-login hidden">
+      <h1>♥ 婚礼回执后台</h1>
+      <div class="panel">
+        <div class="field">
+          <label for="admin-email">邮箱</label>
+          <input type="text" id="admin-email" autocomplete="username" placeholder="后台账号邮箱">
+        </div>
+        <div class="field">
+          <label for="admin-password">密码</label>
+          <input type="password" id="admin-password" autocomplete="current-password" placeholder="后台账号密码">
+        </div>
+        <button class="btn btn-primary btn-block" id="admin-login-btn" type="button">登 录</button>
+        <p class="admin-err" id="admin-login-err"></p>
+      </div>
+    </div>
+
+    <!-- 面板视图 -->
+    <div id="admin-panel" class="hidden">
+      <div class="admin-header">
+        <h1>♥ 回执名单</h1>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn" id="admin-refresh" type="button">刷新</button>
+          <button class="btn" id="admin-export" type="button">导出 CSV</button>
+          <button class="btn" id="admin-logout" type="button">退出</button>
+        </div>
+      </div>
+
+      <div class="admin-stats">
+        <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">收到回执</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-yes">0</div><div class="stat-label">确定出席</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-guests">0</div><div class="stat-label">出席人数</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-no">0</div><div class="stat-label">遗憾缺席</div></div>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>时间</th><th>姓名</th><th>电话</th><th>出席</th><th>人数</th><th>留言</th><th></th></tr>
+          </thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+        <p id="admin-empty" class="hidden" style="text-align:center;padding:24px;color:#7a4e2d">
+          还没有人提交回执，把请柬链接发出去吧 ♥
+        </p>
+      </div>
+    </div>
+
+    <!-- 未配置提示 -->
+    <div id="admin-unconfigured" class="hidden">
+      <div class="panel" style="text-align:center">
+        <p style="font-size:30px;margin-bottom:16px">回执后台还没有开通</p>
+        <p style="color:#7a4e2d;line-height:1.9">
+          请先按 README.md 的步骤开通 Supabase，<br>
+          然后把网址和密钥填进 config.js 再刷新本页。
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast" hidden></div>
+
+  <script src="assets/js/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/pixelart.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

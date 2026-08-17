@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>我们的婚礼请柬</title>
+  <meta name="description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
+  <!-- 微信分享预览图：部署到线上后，把下面改成你的照片的完整网址（例如 https://用户名.github.io/仓库名/photos/photo1.jpg） -->
+  <!-- <meta property="og:image" content="share-preview.png"> -->
+  <meta property="og:title" content="我们的婚礼请柬">
+  <meta property="og:description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ 开屏：信封 ============ -->
+  <div id="envelope-screen">
+    <div class="envelope-wrap" id="envelope-wrap" role="button" aria-label="打开请柬"></div>
+    <p class="open-hint" id="open-hint">▼ 点击拆开请柬 ▼</p>
+  </div>
+
+  <!-- ============ 音乐开关 ============ -->
+  <button id="music-toggle" hidden aria-label="音乐开关"></button>
+
+  <!-- ============ 请柬正文 ============ -->
+  <main id="invitation" aria-hidden="true">
+
+    <!-- 主视觉 -->
+    <header id="hero">
+      <div id="hero-scene" aria-hidden="true"></div>
+      <svg class="bunting" width="400" height="60" viewBox="0 0 400 60" shape-rendering="crispEdges" aria-hidden="true">
+        <line x1="0" y1="12" x2="400" y2="12" stroke="#4a2f1d" stroke-width="3"/>
+        <polygon points="20,14 56,14 38,48" fill="#e85d75"/>
+        <polygon points="58,14 94,14 76,48" fill="#ffc94d"/>
+        <polygon points="96,14 132,14 114,48" fill="#6dbe45"/>
+        <polygon points="134,14 170,14 152,48" fill="#4a7fd4"/>
+        <polygon points="172,14 208,14 190,48" fill="#ffb3c1"/>
+        <polygon points="210,14 246,14 228,48" fill="#e85d75"/>
+        <polygon points="248,14 284,14 266,48" fill="#ffc94d"/>
+        <polygon points="286,14 322,14 304,48" fill="#6dbe45"/>
+        <polygon points="324,14 360,14 342,48" fill="#4a7fd4"/>
+        <polygon points="362,14 398,14 380,48" fill="#ffb3c1"/>
+      </svg>
+      <h1 class="hero-names reveal"><span id="name-groom"></span><span class="amp">♥</span><span id="name-bride"></span></h1>
+      <p class="hero-date reveal" id="hero-date"></p>
+      <p class="hero-line reveal">诚 邀 您 出 席 我 们 的 婚 礼</p>
+      <p class="scroll-hint">▼ 往下看 ▼</p>
+    </header>
+
+    <!-- 故事对话 -->
+    <section class="section" id="story">
+      <div class="scene-divider" id="divider-1" aria-hidden="true"></div>
+      <h2 class="sec-title"><span class="heart" data-heart></span>我们的故事<span class="heart" data-heart></span></h2>
+      <div class="dialog-box reveal" id="dialog-box" role="button" tabindex="0" aria-label="点击继续">
+        <div class="dialog-portrait" id="dialog-portrait"></div>
+        <div class="dialog-body">
+          <div class="dialog-speaker" id="dialog-speaker"></div>
+          <p class="dialog-text" id="dialog-text"></p>
+          <div class="dialog-next">▼</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 照片墙 -->
+    <section class="section" id="gallery">
+      <h2 class="sec-title"><span class="heart" data-heart></span>我们的照片<span class="heart" data-heart></span></h2>
+      <div id="gallery-grid"></div>
+    </section>
+
+    <!-- 婚礼信息 -->
+    <section class="section" id="info">
+      <h2 class="sec-title"><span class="heart" data-heart></span>婚礼信息<span class="heart" data-heart></span></h2>
+      <div class="panel reveal">
+        <div class="info-row">
+          <div class="icon" data-icon="calendar"></div>
+          <div>
+            <div class="info-label">时间 TIME</div>
+            <div class="info-value" id="info-date"></div>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="icon" data-icon="pin"></div>
+          <div>
+            <div class="info-label">地点 PLACE</div>
+            <div class="info-value" id="info-venue"></div>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="icon" data-icon="heartSm"></div>
+          <div>
+            <div class="info-label">距离婚礼还有</div>
+            <div id="countdown">
+              <div class="cd-box"><div class="cd-num" id="cd-days">--</div><div class="cd-label">天</div></div>
+              <div class="cd-box"><div class="cd-num" id="cd-hours">--</div><div class="cd-label">时</div></div>
+              <div class="cd-box"><div class="cd-num" id="cd-mins">--</div><div class="cd-label">分</div></div>
+              <div class="cd-box"><div class="cd-num" id="cd-secs">--</div><div class="cd-label">秒</div></div>
+            </div>
+          </div>
+        </div>
+        <a class="btn btn-wood btn-block" id="map-btn" target="_blank" rel="noopener"></a>
+        <button class="btn btn-block" id="ics-btn" type="button"></button>
+      </div>
+    </section>
+
+    <!-- 回执 -->
+    <section class="section" id="rsvp">
+      <h2 class="sec-title"><span class="heart" data-heart></span>出席回执<span class="heart" data-heart></span></h2>
+      <div class="panel reveal">
+        <p id="rsvp-counter" hidden>已有 <b id="rsvp-count">0</b> 位宾客送出祝福 ♥</p>
+        <form id="rsvp-form" novalidate>
+          <div class="field">
+            <label for="rsvp-name">您的姓名 <span class="req">*</span></label>
+            <input type="text" id="rsvp-name" maxlength="20" placeholder="怎么称呼您？" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="rsvp-phone">联系电话（选填）</label>
+            <input type="tel" id="rsvp-phone" maxlength="11" placeholder="方便我们联系您" autocomplete="tel">
+          </div>
+          <div class="field">
+            <label>您能来吗？ <span class="req">*</span></label>
+            <div class="radio-pills" id="rsvp-attending">
+              <label class="checked" data-val="yes"><input type="radio" name="attending" value="yes" checked>♥ 一定到</label>
+              <label class="no" data-val="no"><input type="radio" name="attending" value="no">遗憾缺席</label>
+            </div>
+          </div>
+          <div class="field" id="rsvp-count-field">
+            <label>参加人数</label>
+            <div class="stepper">
+              <button type="button" id="stepper-minus" aria-label="减一人">−</button>
+              <span class="stepper-val" id="stepper-val">1</span>
+              <button type="button" id="stepper-plus" aria-label="加一人">＋</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="rsvp-msg">祝福留言（选填）</label>
+            <textarea id="rsvp-msg" maxlength="200" placeholder="想对我们说的话……"></textarea>
+          </div>
+          <button class="btn btn-primary btn-block" id="rsvp-submit" type="submit">✉ 提交回执</button>
+        </form>
+        <div class="rsvp-success hidden" id="rsvp-success">
+          <span class="big-heart" data-icon="gift"></span>
+          <p id="rsvp-success-text">收到你的祝福啦！♥</p>
+          <button class="btn btn-block" type="button" id="rsvp-again" style="margin-top:24px">再填一份（帮家人报名）</button>
+        </div>
+        <p class="hidden" id="rsvp-disabled-hint" style="text-align:center;color:#7a4e2d">回执功能尚未开通，详见 README 说明。</p>
+      </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer>
+      <div class="scene-divider" id="divider-2" aria-hidden="true"></div>
+      <p class="footer-names"><span id="foot-groom"></span> ♥ <span id="foot-bride"></span></p>
+      <p class="footer-date" id="foot-date"></p>
+      <div class="footer-btns">
+        <button class="btn" id="share-btn" type="button">✉ 分享请柬</button>
+      </div>
+      <p class="footer-note">本请柬由爱与像素驱动 ♥</p>
+    </footer>
+  </main>
+
+  <!-- 灯箱 -->
+  <div id="lightbox" hidden><img id="lightbox-img" alt="照片大图"></div>
+
+  <!-- 提示气泡 -->
+  <div id="toast" hidden></div>
+
+  <script src="assets/js/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/pixelart.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
