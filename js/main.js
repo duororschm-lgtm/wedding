@@ -155,6 +155,49 @@
       var icsBtn = $('#ics-btn');
       icsBtn.appendChild(PixelArt.sprite('calendar', 5));
       icsBtn.appendChild(document.createTextNode('添加到日历'));
+      var copyAddrBtn = $('#copy-addr-btn');
+      copyAddrBtn.appendChild(PixelArt.sprite('heartSm', 5));
+      copyAddrBtn.appendChild(document.createTextNode('复制地址'));
+    }
+
+    /* ---------- 婚礼月历（婚礼日红心高亮） ---------- */
+    function buildCalendar() {
+      var el = $('#wedding-cal');
+      var y = C.date.year, m = C.date.month, d = C.date.day;
+      var daysInMonth = new Date(y, m, 0).getDate();
+      var startDow = new Date(y, m - 1, 1).getDay();   // 0 = 周日
+
+      var head = makeDiv('cal-head');
+      var title = makeDiv('cal-head-title');
+      title.textContent = y + ' 年 ' + m + ' 月';
+      var sub = makeDiv('cal-head-sub');
+      sub.textContent = '把这一天，圈进我们的共同回忆 ♥';
+      head.appendChild(title);
+      head.appendChild(sub);
+
+      var week = makeDiv('cal-week');
+      ['日', '一', '二', '三', '四', '五', '六'].forEach(function (w) {
+        var wd = makeDiv('cal-wd');
+        wd.textContent = w;
+        week.appendChild(wd);
+      });
+
+      var grid = makeDiv('cal-grid');
+      for (var i = 0; i < startDow; i++) grid.appendChild(makeDiv('cal-day cal-empty'));
+      for (var day = 1; day <= daysInMonth; day++) {
+        var cell = makeDiv('cal-day' + (day === d ? ' cal-wed' : ''));
+        cell.textContent = String(day);
+        if (day === d) {
+          var mark = makeDiv('cal-wed-mark');
+          mark.textContent = '♥ 婚礼日';
+          cell.appendChild(mark);
+        }
+        grid.appendChild(cell);
+      }
+
+      el.appendChild(head);
+      el.appendChild(week);
+      el.appendChild(grid);
     }
 
     /* ============================================================
@@ -317,22 +360,38 @@
     function buildHero() {
       var scene = $('#hero-scene');
 
-      /* 远景山丘（视差最远层） */
+      /* 远景山丘（视差最远层，Gemini 生成图已转像素并抠白） */
       var hills = makeDiv('hills');
-      var peaks = [
-        { c: '#93c9e8', pts: [[-20, 90], [80, 34], [180, 90]] },
-        { c: '#93c9e8', pts: [[160, 90], [270, 26], [390, 90]] },
-        { c: '#7fb4d8', pts: [[60, 90], [180, 52], [300, 90]] },
-        { c: '#7fb4d8', pts: [[250, 90], [370, 44], [490, 90]] }
-      ].map(function (m) {
-        return '<polygon points="' + m.pts.join(' ') + '" fill="' + m.c + '"/>';
-      }).join('');
-      hills.innerHTML = '<svg class="hills-svg" viewBox="0 0 400 90" preserveAspectRatio="none" shape-rendering="crispEdges" aria-hidden="true">' + peaks + '</svg>';
+      var hillsImg = document.createElement('img');
+      hillsImg.src = 'assets/bg/pix/hills-far.png';
+      hillsImg.alt = '';
+      hillsImg.onerror = function () { hills.style.display = 'none'; };
+      hills.appendChild(hillsImg);
 
       /* 树线（中景） */
       var treeLine = makeDiv('tree-line');
-      for (var t = 0; t < 9; t++) {
-        treeLine.appendChild(PixelArt.sprite('tree', t % 2 ? 3 : 4));
+      var treeImg = document.createElement('img');
+      treeImg.src = 'assets/bg/pix/tree-line.png';
+      treeImg.alt = '';
+      treeImg.onerror = function () { treeLine.style.display = 'none'; };
+      treeLine.appendChild(treeImg);
+
+      /* 夜间星空背景（18 点后整屏显示） */
+      var nightSky = makeDiv('night-sky');
+      var nightImg = document.createElement('img');
+      nightImg.src = 'assets/bg/pix/night-sky.png';
+      nightImg.alt = '';
+      nightSky.appendChild(nightImg);
+
+      /* 花瓣雨 */
+      var petals = makeDiv('petals');
+      for (var p = 0; p < 12; p++) {
+        var petal = makeDiv('petal');
+        petal.style.left = ((p * 89) % 100) + '%';
+        petal.style.animationDelay = (p * 0.9 % 8).toFixed(1) + 's';
+        petal.style.animationDuration = (7 + (p * 37) % 5).toFixed(1) + 's';
+        petal.appendChild(PixelArt.sprite('petal', 3));
+        petals.appendChild(petal);
       }
 
       /* 太阳 + 月亮 + 星星（夜间自动切换） */
@@ -370,6 +429,7 @@
         grassline.appendChild(flower);
       }
 
+      scene.appendChild(nightSky);
       scene.appendChild(hills);
       scene.appendChild(treeLine);
       scene.appendChild(sun);
@@ -379,6 +439,7 @@
       scene.appendChild(cloud2);
       scene.appendChild(heart);
       scene.appendChild(couple);
+      scene.appendChild(petals);
       scene.appendChild(grassline);
     }
 
@@ -560,6 +621,34 @@
        ============================================================ */
     function buildInfo() {
       var v = C.venue;
+
+      /* 住宿与接送说明（编辑器里填了才显示） */
+      if (v && v.notice) {
+        var notice = $('#info-notice');
+        notice.hidden = false;
+        var icon = makeDiv('info-notice-icon');
+        icon.appendChild(PixelArt.sprite('star', 4));
+        var body = makeDiv('info-notice-body');
+        var t = document.createElement('div');
+        t.className = 'info-notice-title';
+        t.textContent = '住宿 & 接送安排';
+        var p = document.createElement('p');
+        p.textContent = v.notice;
+        body.appendChild(t);
+        body.appendChild(p);
+        notice.appendChild(icon);
+        notice.appendChild(body);
+      }
+
+      /* 婚礼月历（婚礼日高亮） */
+      buildCalendar();
+
+      /* 复制地址 */
+      $('#copy-addr-btn').addEventListener('click', function () {
+        copyText((v.name || '') + ' ' + (v.address || ''));
+        toast('地址已复制，去粘贴给朋友吧 ♥');
+      });
+
       $('#map-btn').href = 'https://uri.amap.com/marker?position=' + (v.lng || 0) + ',' + (v.lat || 0) +
         '&name=' + encodeURIComponent(v.name || '婚礼地点') + '&src=wedding&callnative=1';
 

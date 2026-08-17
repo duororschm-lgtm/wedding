@@ -220,6 +220,7 @@
     $('#ed-venue-address').value = v.address || '';
     $('#ed-lng').value = v.lng == null ? '' : v.lng;
     $('#ed-lat').value = v.lat == null ? '' : v.lat;
+    $('#ed-venue-notice').value = v.notice || '';
     $('#ed-share-title').value = s.title || '';
     $('#ed-share-desc').value = s.desc || '';
     $('#ed-music').value = m.src || '';
@@ -271,7 +272,8 @@
         name: $('#ed-venue-name').value.trim(),
         address: $('#ed-venue-address').value.trim(),
         lng: numVal('#ed-lng'),
-        lat: numVal('#ed-lat')
+        lat: numVal('#ed-lat'),
+        notice: $('#ed-venue-notice').value.trim()
       },
       story: textToStory($('#ed-story').value),
       share: {

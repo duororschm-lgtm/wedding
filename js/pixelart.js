@@ -363,6 +363,17 @@
       ]
     },
 
+    /* 花瓣 4×4（花瓣雨用） */
+    petal: {
+      palette: { P: P.pink, R: P.redLight },
+      grid: [
+        '.PP.',
+        'PRRP',
+        'RRRR',
+        '.RR.'
+      ]
+    },
+
     /* 草丛 10×3 */
     grassTuft: {
       palette: { G: P.grassDark },
