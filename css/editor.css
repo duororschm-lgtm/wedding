@@ -1,0 +1,210 @@
+/* ============================================================
+   内容编辑器后台 · 特有样式
+   面板 / 按钮 / 表单等基础样式复用 css/style.css
+   ============================================================ */
+
+/* 编辑器版心比回执后台宽一点，放得下 tab 内容 */
+.editor-main { max-width: 860px; }
+
+/* style.css 只定义了 text/tel 输入框，这里补上编辑器的 password 和 number */
+.editor-main .field input[type="password"],
+.editor-main .field input[type="number"] {
+  width: 100%;
+  font-family: inherit;
+  font-size: 24px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  padding: 12px 14px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.editor-main .field input:focus,
+.editor-main .field textarea:focus {
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 3px rgba(255, 201, 77, 0.45);
+}
+
+/* ---------- 顶部 tab 栏 ---------- */
+.editor-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 20px 24px;
+}
+.editor-tabs .tab {
+  flex: 1;
+  min-width: 120px;
+  font-family: inherit;
+  font-size: 24px;
+  letter-spacing: 4px;
+  background: var(--cream);
+  color: var(--ink-soft);
+  border: 4px solid var(--ink);
+  padding: 12px 4px;
+  cursor: pointer;
+}
+.editor-tabs .tab + .tab { border-left-width: 0; }
+.editor-tabs .tab.active { background: var(--gold); color: var(--ink); }
+.editor-tabs .tab:active { background: var(--gold-dark); }
+
+/* ---------- 分组面板 ---------- */
+.editor-panel { margin-bottom: 28px; }
+.editor-sub {
+  font-size: 26px;
+  font-weight: normal;
+  letter-spacing: 4px;
+  margin-bottom: 22px;
+}
+.editor-sub::before { content: "♥ "; color: var(--red); }
+.editor-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.editor-sub-row .editor-sub { margin-bottom: 0; }
+
+/* ---------- 表单栅格 ---------- */
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 20px;
+}
+.editor-grid .field { margin-bottom: 22px; }
+.editor-grid-5 { grid-template-columns: repeat(5, 1fr); column-gap: 12px; }
+
+/* ---------- 音乐上传行 ---------- */
+.editor-music { display: flex; gap: 14px; align-items: flex-end; }
+.editor-music .field { flex: 1; margin-bottom: 0; }
+.editor-music .btn { flex: none; }
+
+/* ---------- 故事文本域 ---------- */
+.editor-panel .editor-story { height: 320px; }
+
+/* ---------- 提示文案 ---------- */
+.editor-hint {
+  font-size: 18px;
+  color: var(--ink-soft);
+  letter-spacing: 1px;
+  line-height: 1.8;
+  margin-top: 10px;
+  word-break: break-all;
+}
+.editor-note {
+  text-align: center;
+  margin: 20px 20px 0;
+  background: var(--ink);
+  color: var(--gold);
+  padding: 14px 18px;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+/* ---------- 保存按钮 ---------- */
+.editor-save { margin: 4px 20px 24px; }
+
+/* ---------- 照片网格 ---------- */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 22px;
+}
+.ph-item {
+  position: relative;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  padding: 8px;
+  box-shadow: 0 6px 0 rgba(74, 47, 29, 0.5);
+}
+.ph-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  image-rendering: auto;   /* 照片缩略图不要像素化 */
+  border: 3px solid rgba(138, 91, 43, 0.4);
+}
+.ph-del {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 44px;
+  height: 44px;
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 1;
+  background: var(--red);
+  color: var(--paper);
+  border: 4px solid var(--ink);
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink);
+}
+.ph-del:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+
+/* ---------- 嘉宾列表 ---------- */
+.guest-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-bottom: 3px dashed rgba(138, 91, 43, 0.35);
+}
+.guest-row:last-child { border-bottom: none; }
+.guest-info {
+  flex: 1 1 150px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.guest-name { font-size: 26px; }
+.guest-note { font-size: 18px; color: var(--ink-soft); }
+.guest-link {
+  flex: 2 1 240px;
+  font-size: 15px;
+  color: var(--blue-dark);
+  word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
+  background: var(--paper);
+  border: 3px solid rgba(138, 91, 43, 0.4);
+  padding: 10px 12px;
+}
+.badge.wait { background: var(--gold); color: var(--ink); }
+
+/* ---------- 小按钮（复制链接 / 导出等） ---------- */
+.btn-sm {
+  font-size: 18px;
+  padding: 8px 16px;
+  border-width: 3px;
+  box-shadow: 0 4px 0 var(--ink);
+}
+
+/* ---------- 看板：表格嵌在面板里时去掉自带外边距 ---------- */
+.editor-panel .admin-table-wrap { margin: 0; }
+
+/* ---------- 未回复嘉宾名单 ---------- */
+.unreplied-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.guest-chip {
+  background: var(--cream-2);
+  border: 3px solid var(--ink);
+  padding: 4px 14px;
+  font-size: 20px;
+}
+
+/* ---------- 手机窄屏 ---------- */
+@media (max-width: 600px) {
+  .editor-grid-5 { grid-template-columns: repeat(3, 1fr); }
+  .editor-music { flex-direction: column; align-items: stretch; }
+  .editor-tabs .tab { min-width: 80px; font-size: 20px; }
+}
+@media (max-width: 480px) {
+  .editor-grid { grid-template-columns: 1fr; }
+}

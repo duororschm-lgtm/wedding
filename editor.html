@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>内容管理 · 婚礼后台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/editor.css">
+</head>
+<body class="admin-body">
+
+  <main class="admin-main editor-main">
+
+    <!-- 登录视图 -->
+    <div id="editor-login" class="admin-login hidden">
+      <h1>♥ 婚礼内容后台</h1>
+      <div class="panel">
+        <div class="field">
+          <label for="editor-email">邮箱</label>
+          <input type="text" id="editor-email" autocomplete="username" placeholder="后台账号邮箱">
+        </div>
+        <div class="field">
+          <label for="editor-password">密码</label>
+          <input type="password" id="editor-password" autocomplete="current-password" placeholder="后台账号密码">
+        </div>
+        <button class="btn btn-primary btn-block" id="editor-login-btn" type="button">登 录</button>
+        <p class="admin-err" id="editor-login-err"></p>
+      </div>
+    </div>
+
+    <!-- 面板视图 -->
+    <div id="editor-panel" class="hidden">
+      <div class="admin-header">
+        <h1>♥ 内容管理</h1>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn" id="editor-logout" type="button">退出</button>
+        </div>
+      </div>
+
+      <!-- 顶部 tab 栏 -->
+      <nav class="editor-tabs">
+        <button class="tab active" data-tab="content" type="button">内容</button>
+        <button class="tab" data-tab="photos" type="button">照片</button>
+        <button class="tab" data-tab="guests" type="button">嘉宾</button>
+        <button class="tab" data-tab="board" type="button">看板</button>
+      </nav>
+
+      <!-- ① 内容 -->
+      <section id="tab-content" class="tab-page">
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">新人</h2>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-groom">新郎姓名</label><input type="text" id="ed-groom" maxlength="20"></div>
+            <div class="field"><label for="ed-bride">新娘姓名</label><input type="text" id="ed-bride" maxlength="20"></div>
+            <div class="field"><label for="ed-groom-nick">新郎昵称</label><input type="text" id="ed-groom-nick" maxlength="20"></div>
+            <div class="field"><label for="ed-bride-nick">新娘昵称</label><input type="text" id="ed-bride-nick" maxlength="20"></div>
+          </div>
+          <p class="editor-hint">昵称用于故事对话：对话里写「晓宇」「小新娘」会自动换成昵称。</p>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">婚礼时间</h2>
+          <div class="editor-grid editor-grid-5">
+            <div class="field"><label for="ed-year">年</label><input type="number" id="ed-year" min="2020" max="2100"></div>
+            <div class="field"><label for="ed-month">月</label><input type="number" id="ed-month" min="1" max="12"></div>
+            <div class="field"><label for="ed-day">日</label><input type="number" id="ed-day" min="1" max="31"></div>
+            <div class="field"><label for="ed-hour">时</label><input type="number" id="ed-hour" min="0" max="23"></div>
+            <div class="field"><label for="ed-minute">分</label><input type="number" id="ed-minute" min="0" max="59"></div>
+          </div>
+          <div class="field">
+            <label for="ed-lunar">农历（选填，如：农历八月廿一）</label>
+            <input type="text" id="ed-lunar" maxlength="20">
+          </div>
+          <p class="editor-hint">时间按 24 小时制填写，倒计时和「添加到日历」都会跟着变。</p>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">地点</h2>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-venue-name">场地名称</label><input type="text" id="ed-venue-name" maxlength="40"></div>
+            <div class="field"><label for="ed-venue-address">详细地址</label><input type="text" id="ed-venue-address" maxlength="80"></div>
+            <div class="field"><label for="ed-lng">经度 lng</label><input type="number" id="ed-lng" step="any"></div>
+            <div class="field"><label for="ed-lat">纬度 lat</label><input type="number" id="ed-lat" step="any"></div>
+          </div>
+          <p class="editor-hint">经度纬度用于「地图导航」按钮：打开高德坐标拾取器 lbs.amap.com/tools/picker，搜到场地后复制右侧的经度、纬度。</p>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">故事对话</h2>
+          <div class="field">
+            <label for="ed-story">对话内容（每行一句）</label>
+            <textarea id="ed-story" class="editor-story"></textarea>
+          </div>
+          <p class="editor-hint">每行一句，格式：发言者|内容。发言者留空表示「旁白」；也可以直接写任意名字。</p>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">分享文案</h2>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-share-title">分享标题</label><input type="text" id="ed-share-title" maxlength="60"></div>
+            <div class="field"><label for="ed-share-desc">分享描述</label><input type="text" id="ed-share-desc" maxlength="80"></div>
+          </div>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">背景音乐</h2>
+          <div class="editor-music">
+            <div class="field">
+              <label for="ed-music">音乐地址（mp3 / m4a / ogg）</label>
+              <input type="text" id="ed-music" placeholder="留空播放内置 8-bit 卡农">
+            </div>
+            <button class="btn btn-wood" id="music-upload-btn" type="button">上传音乐</button>
+            <input type="file" id="music-file" accept=".mp3,.m4a,.ogg,audio/mpeg,audio/mp4,audio/ogg" hidden>
+          </div>
+          <p class="editor-hint">点「上传音乐」选择文件，地址会自动填进输入框；地址留空 = 播放内置 8-bit 卡农小曲。</p>
+        </div>
+
+        <button class="btn btn-primary btn-block editor-save" id="content-save" type="button">保 存</button>
+      </section>
+
+      <!-- ② 照片 -->
+      <section id="tab-photos" class="tab-page hidden">
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">当前照片</h2>
+          <div class="photo-grid" id="photo-grid"></div>
+          <p id="photo-empty" class="editor-hint hidden" style="text-align:center">还没有照片，用下面的按钮上传吧 ♥</p>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">上传新照片</h2>
+          <button class="btn btn-wood btn-block" id="photo-upload-btn" type="button">选择照片上传（可多选）</button>
+          <input type="file" id="photo-file" accept="image/*" multiple hidden>
+          <p class="editor-hint" id="photo-progress"></p>
+          <p class="editor-hint">建议宽高比 4:3、单张 1MB 以内，上传后请柬即时显示。</p>
+        </div>
+      </section>
+
+      <!-- ③ 嘉宾 -->
+      <section id="tab-guests" class="tab-page hidden">
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">添加嘉宾</h2>
+          <div class="editor-grid">
+            <div class="field"><label for="guest-name">姓名 <span class="req">*</span></label><input type="text" id="guest-name" maxlength="20" placeholder="怎么称呼 ta？"></div>
+            <div class="field"><label for="guest-note">备注（选填）</label><input type="text" id="guest-note" maxlength="50" placeholder="例如：同事 / 大学室友"></div>
+          </div>
+          <button class="btn btn-primary btn-block" id="guest-add-btn" type="button">添加嘉宾</button>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">嘉宾名单</h2>
+          <div id="guest-list"></div>
+          <p id="guest-empty" class="editor-hint hidden" style="text-align:center">还没有嘉宾，添加后每人会有一个专属链接 ♥</p>
+        </div>
+        <p class="editor-note">发给谁就点谁的复制链接，对方打开请柬会自动显示 ta 的名字</p>
+      </section>
+
+      <!-- ④ 看板 -->
+      <section id="tab-board" class="tab-page hidden">
+
+        <div class="admin-stats">
+          <div class="stat-card"><div class="stat-num" id="bstat-total">0</div><div class="stat-label">收到回执</div></div>
+          <div class="stat-card"><div class="stat-num" id="bstat-yes">0</div><div class="stat-label">一定到人数</div></div>
+          <div class="stat-card"><div class="stat-num" id="bstat-no">0</div><div class="stat-label">遗憾缺席</div></div>
+          <div class="stat-card"><div class="stat-num" id="bstat-wait">0</div><div class="stat-label">未回复嘉宾</div></div>
+        </div>
+
+        <div class="panel editor-panel">
+          <div class="editor-sub-row">
+            <h2 class="editor-sub">回执明细</h2>
+            <button class="btn btn-sm" id="board-export" type="button">导出 CSV</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>时间</th><th>姓名</th><th>电话</th><th>出席</th><th>人数</th><th>留言</th><th>来源</th><th></th></tr>
+              </thead>
+              <tbody id="board-tbody"></tbody>
+            </table>
+            <p id="board-empty" class="hidden" style="text-align:center;padding:24px;color:#7a4e2d">
+              还没有人提交回执，把请柬链接发出去吧 ♥
+            </p>
+          </div>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">未回复嘉宾</h2>
+          <div class="unreplied-list" id="unreplied-list"></div>
+          <p id="unreplied-empty" class="editor-hint" style="text-align:center">太棒了，所有嘉宾都已回复 ♥</p>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- 未配置提示 -->
+    <div id="editor-unconfigured" class="hidden">
+      <div class="panel" style="text-align:center">
+        <p style="font-size:30px;margin-bottom:16px">内容后台还没有开通</p>
+        <p style="color:#7a4e2d;line-height:1.9">
+          尚未配置 Supabase，<br>请先在 config.js 填 url 和 anonKey 并运行 db/init.sql。
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast" hidden></div>
+
+  <script src="assets/js/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>
