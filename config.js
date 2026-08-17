@@ -160,8 +160,8 @@ window.WEDDING_CONFIG = {
      先看 README.md 按步骤开通，然后把 URL 和 Key 填到这里。
      没填之前，请柬其他功能都正常，只是回执表单用不了。 */
   supabase: {
-    url: "",
-    anonKey: ""
+    url: "https://qbvwxadsvqgszzabcqyq.supabase.co",
+    anonKey: "sb_publishable_IlLSIlIaf-KhJeFykLiLCg_oXOWGZ_N"
   },
 
   /* ---------- 微信分享文案 ---------- */
