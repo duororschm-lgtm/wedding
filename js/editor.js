@@ -780,14 +780,20 @@
     var rsvpP = supabase.from('rsvp').select('*').order('created_at', { ascending: false }).then(function (r) {
       return r.error ? { error: r.error, data: [] } : { error: null, data: r.data || [] };
     });
-    Promise.all([guestsP, rsvpP]).then(function (res) {
+    /* 访问统计（需先在 Supabase SQL Editor 跑过 db/visit-stats.sql） */
+    var visitP = supabase.rpc('visit_stats').then(function (r) {
+      if (r.error) return { error: r.error, data: null };
+      return { error: null, data: (r.data && r.data[0]) || { total: 0, recent24h: 0, opened_guests: 0 } };
+    }).catch(function (e) { return { error: e, data: null }; });
+    Promise.all([guestsP, rsvpP, visitP]).then(function (res) {
       if (res[0].error) toast('读取嘉宾失败：' + res[0].error.message + '（guests 表建好了吗？）');
       if (res[1].error) toast('读取回执失败：' + res[1].error.message);
-      renderBoard(res[0].data, res[1].data);
+      if (res[2].error) toast('访问统计未开通：把 db/visit-stats.sql 在 Supabase SQL Editor 跑一遍即可');
+      renderBoard(res[0].data, res[1].data, res[2].data);
     });
   }
 
-  function renderBoard(guests, rsvps) {
+  function renderBoard(guests, rsvps, visits) {
     guestsMap = {};
     guests.forEach(function (g) { guestsMap[g.id] = g; });
     rsvpCache = rsvps;
@@ -806,6 +812,18 @@
     $('#bstat-yes').textContent = yesGuests;
     $('#bstat-no').textContent = noCount;
     $('#bstat-wait').textContent = unreplied.length;
+
+    /* 访问统计卡 */
+    if (visits) {
+      $('#bstat-visit').textContent = visits.total;
+      $('#bstat-visit24').textContent = visits.recent24h;
+      $('#bstat-visit-open').textContent = visits.opened_guests;
+      $('#bstat-visit-unopen').textContent = Math.max(0, guests.length - visits.opened_guests);
+    } else {
+      ['visit', 'visit24', 'visit-open', 'visit-unopen'].forEach(function (s) {
+        $('#bstat-' + s).textContent = '—';
+      });
+    }
 
     /* 回执明细表 */
     var tbody = $('#board-tbody');

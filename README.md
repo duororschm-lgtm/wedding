@@ -117,6 +117,10 @@ https://lbs.amap.com/tools/picker 搜索酒店获取）、开篇故事对话
 （可删除、导出 CSV）+ 未回复嘉宾名单。旧的 admin.html 就是简化版看板，
 日常用编辑器就够了。
 
+**访问统计（谁打开了请柬）**：打开次数 / 近 24 小时 / 已打开专属请柬的嘉宾 / 未打开嘉宾。
+需要先把 `db/visit-stats.sql` 整段复制到 Supabase SQL Editor 跑一次
+（在 init.sql 之后跑，可重复运行）。
+
 ---
 
 ## 常见问题

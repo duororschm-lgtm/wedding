@@ -97,6 +97,11 @@
     var supabase = ctx.supabase;
     var guest = ctx.guest;
 
+    /* 访问统计：每次打开请柬记一条（专属链接带上嘉宾 id），失败不打扰 */
+    if (supabase) {
+      supabase.rpc('log_visit', { p_guest: guest.id }).catch(function () {});
+    }
+
     C.couple = C.couple || {}; C.date = C.date || {}; C.venue = C.venue || {};
     C.share = C.share || {};
 
