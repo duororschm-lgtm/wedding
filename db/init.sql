@@ -12,7 +12,7 @@ create table if not exists public.rsvp (
   name text not null,
   phone text,
   attending boolean not null default true,
-  guest_count int not null default 1 check (guest_count between 1 and 20),
+  guest_count int not null default 1 check (guest_count between 0 and 20),
   message text,
   needs_accommodation text not null default 'no',
   check_in_at text,

@@ -1064,7 +1064,7 @@
           name: name,
           phone: phone || null,
           attending: attending,
-          guest_count: attending ? guestCount : 0,
+          guest_count: attending ? guestCount : 1, // 缺席也存 1：旧库约束 1~20，0 会被拒绝
           message: msg || null,
           needs_accommodation: needsAcc ? 'yes' : 'no',
           check_in_at: needsAcc ? checkIn.replace('T', ' ') : null,

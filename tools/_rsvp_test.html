@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>rsvp-test</title>
+</head>
+<body>
+<iframe id="f" style="width:360px;height:900px;border:0"></iframe>
+<pre id="report">REPORT
+PENDING</pre>
+<script>
+  var rep = document.getElementById('report');
+  try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) {}
+  var f = document.getElementById('f');
+  f.src = '/index.html';
+  f.addEventListener('load', function () { setTimeout(run, 10000); });
+
+  function run() {
+    var out = [];
+    try {
+      var w = f.contentWindow, d = f.contentDocument;
+      var noPill = d.querySelector('#rsvp-attending label[data-val="no"]');
+      if (!noPill) { rep.textContent = 'REPORT\nERROR no-pill'; return; }
+      noPill.click();
+      d.getElementById('rsvp-name').value = '缺席测试';
+      d.getElementById('rsvp-submit').click();
+      out.push('submitted(不参加)');
+      setTimeout(function () {
+        var formHidden = d.getElementById('rsvp-form').classList.contains('hidden');
+        var successVisible = !d.getElementById('rsvp-success').classList.contains('hidden');
+        var errEl = d.getElementById('rsvp-error');
+        out.push('formHidden=' + formHidden);
+        out.push('successVisible=' + successVisible);
+        out.push('errText=' + (errEl && !errEl.hidden ? errEl.textContent : ''));
+        rep.textContent = 'REPORT\n' + out.join('\n');
+      }, 4000);
+    } catch (e) {
+      rep.textContent = 'REPORT\nERROR ' + (e && e.message);
+    }
+  }
+</script>
+</body>
+</html>

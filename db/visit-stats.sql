@@ -44,3 +44,11 @@ grant execute on function public.visit_stats() to authenticated;
 drop policy if exists "管理员可看访问统计" on public.visits;
 create policy "管理员可看访问统计" on public.visits
   for select to authenticated using (true);
+
+-- ============================================================
+-- 附带修复：回执「不参加」提交失败
+-- 旧库 rsvp 约束要求 guest_count 在 1~20，缺席提交 0 会被拒绝。
+-- 这里放宽到 0~20（前端也已改成缺席存 1，双保险）。
+-- ============================================================
+alter table public.rsvp drop constraint if exists rsvp_guest_count_check;
+alter table public.rsvp add constraint rsvp_guest_count_check check (guest_count between 0 and 20);
