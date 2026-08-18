@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>我们的婚礼请柬</title>
   <meta name="description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
-  <!-- 微信分享预览图：部署到线上后，把下面改成你的照片的完整网址（例如 https://用户名.github.io/仓库名/photos/photo1.jpg） -->
-  <!-- <meta property="og:image" content="share-preview.png"> -->
+  <!-- 微信分享预览图：等生成的封面图 assets/tpl/cover.png 就位后替换下面地址 -->
+  <meta property="og:image" content="https://duororschm-lgtm.github.io/wedding/share-preview.png">
   <meta property="og:title" content="我们的婚礼请柬">
   <meta property="og:description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
@@ -103,6 +103,121 @@
       <div class="mascot-row" id="quest-mascots" aria-hidden="true"></div>
     </section>
 
+    <!-- 婚礼节：场景大图 + 故事对话 + 照片墙 -->
+    <section class="section sec-orange sec-dirt" id="ceremony">
+      <h2 class="sec-title"><span class="heart" data-heart></span>婚礼节<span class="heart" data-heart></span></h2>
+      <div class="wood-frame ceremony-board reveal" id="ceremony-board">
+        <img id="ceremony-img" src="assets/bg/pix/ceremony.png" alt="婚礼仪式场景" loading="lazy">
+      </div>
+      <div class="dialog-box reveal" id="dialog-box" role="button" tabindex="0" aria-label="点击继续">
+        <div class="dialog-portrait" id="dialog-portrait"></div>
+        <div class="dialog-body">
+          <div class="dialog-speaker" id="dialog-speaker"></div>
+          <p class="dialog-text" id="dialog-text"></p>
+          <div class="dialog-next">▼</div>
+        </div>
+      </div>
+      <div class="mini-heading gallery-heading"><span class="mini-heading-icon" data-icon="heartSm"></span><span>我们的照片</span></div>
+      <div id="gallery-grid"></div>
+    </section>
+
+    <!-- 山谷地图 -->
+    <section class="section sec-map sec-dirt" id="map">
+      <h2 class="sec-title"><span class="heart" data-heart></span>山谷地图<span class="heart" data-heart></span></h2>
+      <div class="wood-frame map-frame reveal" id="map-frame">
+        <img id="map-img" src="assets/tpl/pelican-town.webp" alt="山谷地图" loading="lazy">
+        <div class="map-pin" id="map-pin" hidden aria-hidden="true"><span data-icon="pin"></span></div>
+      </div>
+      <div class="panel wood-frame reveal map-panel">
+        <div class="transport-grid">
+          <div class="transport-cell"><span class="transport-icon" id="transport-bus"></span><b>公共交通</b><span class="transport-text" id="transport-public"></span></div>
+          <div class="transport-cell"><span class="transport-icon" id="transport-car"></span><b>自驾前往</b><span class="transport-text" id="transport-car-text"></span></div>
+        </div>
+        <a class="btn btn-wood btn-block" id="map-btn" target="_blank" rel="noopener"></a>
+        <button class="btn btn-block" id="copy-addr-btn" type="button"></button>
+        <button class="btn btn-block" id="ics-btn" type="button"></button>
+      </div>
+    </section>
+
+    <!-- 回执 -->
+    <section class="section sec-dirt" id="rsvp">
+      <h2 class="sec-title"><span class="heart" data-heart></span>出席回执<span class="heart" data-heart></span></h2>
+      <div class="panel wood-frame reveal">
+        <p id="rsvp-counter" hidden>已有 <b id="rsvp-count">0</b> 位宾客送出祝福 ♥</p>
+        <form id="rsvp-form" novalidate>
+          <div class="field">
+            <label for="rsvp-name">您的姓名 <span class="req">*</span></label>
+            <input type="text" id="rsvp-name" maxlength="20" placeholder="怎么称呼您？" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="rsvp-phone">联系电话（选填）</label>
+            <input type="tel" id="rsvp-phone" maxlength="11" placeholder="方便我们联系您" autocomplete="tel">
+          </div>
+          <div class="field">
+            <label>您能来吗？ <span class="req">*</span></label>
+            <div class="radio-pills" id="rsvp-attending">
+              <label class="checked" data-val="yes"><input type="radio" name="attending" value="yes" checked>♥ 一定到</label>
+              <label class="no" data-val="no"><input type="radio" name="attending" value="no">遗憾缺席</label>
+            </div>
+          </div>
+          <div class="field" id="rsvp-count-field">
+            <label>参加人数</label>
+            <div class="stepper">
+              <button type="button" id="stepper-minus" aria-label="减一人">−</button>
+              <span class="stepper-val" id="stepper-val">1</span>
+              <button type="button" id="stepper-plus" aria-label="加一人">＋</button>
+            </div>
+          </div>
+          <div class="field" id="rsvp-accommodation-field">
+            <label>是否需要住宿 <span class="req">*</span></label>
+            <div class="radio-pills accommodation-pills" id="rsvp-accommodation">
+              <label data-val="yes"><input type="radio" name="needsAccommodation" value="yes">需要住宿</label>
+              <label data-val="no"><input type="radio" name="needsAccommodation" value="no">无需住宿</label>
+            </div>
+          </div>
+          <div id="accommodation-dates" hidden>
+            <div class="field">
+              <label for="rsvp-checkin">入住时间 <span class="req">*</span></label>
+              <input type="datetime-local" id="rsvp-checkin">
+            </div>
+            <div class="field">
+              <label for="rsvp-checkout">退房时间 <span class="req">*</span></label>
+              <input type="datetime-local" id="rsvp-checkout">
+            </div>
+          </div>
+          <div class="field">
+            <label for="rsvp-msg">祝福留言（选填）</label>
+            <textarea id="rsvp-msg" maxlength="200" placeholder="想对我们说的话……"></textarea>
+            <span class="msg-count"><b id="rsvp-msg-count">0</b> / 200</span>
+          </div>
+          <p class="rsvp-error" id="rsvp-error" role="alert" hidden></p>
+          <button class="btn btn-primary btn-block" id="rsvp-submit" type="submit">✉ 提交回执</button>
+          <p class="form-note">提交即表示同意我们仅为本次婚礼筹备用途保存以上信息。</p>
+        </form>
+        <div class="rsvp-success hidden" id="rsvp-success">
+          <span class="big-heart" data-icon="gift"></span>
+          <p id="rsvp-success-text">收到你的祝福啦！♥</p>
+          <p class="rsvp-summary" id="rsvp-success-summary" hidden></p>
+          <button class="btn btn-block" type="button" id="rsvp-edit" style="margin-top:24px" hidden>修改我的回执</button>
+          <button class="btn btn-block" type="button" id="rsvp-again" style="margin-top:16px">再填一份（帮家人报名）</button>
+        </div>
+        <p class="hidden" id="rsvp-disabled-hint" style="text-align:center;color:#7a4e2d">回执功能尚未开通，详见 README 说明。</p>
+      </div>
+    </section>
+
+    <!-- 山谷友人：祝福信 + 礼物 + 席位墙 -->
+    <section class="section guests-section sec-checker sec-dirt" id="guests">
+      <h2 class="sec-title guests-title"><span class="heart" data-heart></span>山谷友人<span class="heart" data-heart></span></h2>
+      <div class="blessing-card reveal">
+        <div class="mascot-peek" id="guests-mascots" aria-hidden="true"></div>
+        <div class="blessing-title">一封来自山谷的信</div>
+        <p id="blessing-text">春风暖，遇良辰。<br>喝满你们的喜酒，听完一年的花。<br>把最好的故事，变成共同的回忆。</p>
+      </div>
+      <div class="inventory-row reveal" id="gift-row" aria-label="婚礼礼物栏"></div>
+      <div class="animal-grid reveal" id="animal-grid" aria-label="山谷动物席位墙"></div>
+      <div class="harvest-row reveal" id="harvest-row" aria-hidden="true"></div>
+    </section>
+
     <!-- 游戏游园会：钓祝福 / 种花园 / 寻宝集心 / 像素烟花 / 占卜运势 -->
     <section class="section games-section sec-checker sec-dirt" id="games">
       <h2 class="sec-title"><span class="heart" data-heart></span>游戏游园会<span class="heart" data-heart></span></h2>
@@ -196,121 +311,6 @@
         </article>
 
       </div>
-    </section>
-
-    <!-- 婚礼节：场景大图 + 故事对话 + 照片墙 -->
-    <section class="section sec-orange sec-dirt" id="ceremony">
-      <h2 class="sec-title"><span class="heart" data-heart></span>婚礼节<span class="heart" data-heart></span></h2>
-      <div class="wood-frame ceremony-board reveal" id="ceremony-board">
-        <img id="ceremony-img" src="assets/bg/pix/ceremony.png" alt="婚礼仪式场景" loading="lazy">
-      </div>
-      <div class="dialog-box reveal" id="dialog-box" role="button" tabindex="0" aria-label="点击继续">
-        <div class="dialog-portrait" id="dialog-portrait"></div>
-        <div class="dialog-body">
-          <div class="dialog-speaker" id="dialog-speaker"></div>
-          <p class="dialog-text" id="dialog-text"></p>
-          <div class="dialog-next">▼</div>
-        </div>
-      </div>
-      <div class="mini-heading gallery-heading"><span class="mini-heading-icon" data-icon="heartSm"></span><span>我们的照片</span></div>
-      <div id="gallery-grid"></div>
-    </section>
-
-    <!-- 山谷地图 -->
-    <section class="section sec-map sec-dirt" id="map">
-      <h2 class="sec-title"><span class="heart" data-heart></span>山谷地图<span class="heart" data-heart></span></h2>
-      <div class="wood-frame map-frame reveal" id="map-frame">
-        <img id="map-img" src="assets/bg/pix/farm-map.png" alt="山谷地图" loading="lazy">
-        <div class="map-pin" id="map-pin" hidden aria-hidden="true"><span data-icon="pin"></span></div>
-      </div>
-      <div class="panel wood-frame reveal map-panel">
-        <div class="transport-grid">
-          <div class="transport-cell"><span class="transport-icon" id="transport-bus"></span><b>公共交通</b><span class="transport-text" id="transport-public"></span></div>
-          <div class="transport-cell"><span class="transport-icon" id="transport-car"></span><b>自驾前往</b><span class="transport-text" id="transport-car-text"></span></div>
-        </div>
-        <a class="btn btn-wood btn-block" id="map-btn" target="_blank" rel="noopener"></a>
-        <button class="btn btn-block" id="copy-addr-btn" type="button"></button>
-        <button class="btn btn-block" id="ics-btn" type="button"></button>
-      </div>
-    </section>
-
-    <!-- 回执 -->
-    <section class="section sec-dirt" id="rsvp">
-      <h2 class="sec-title"><span class="heart" data-heart></span>出席回执<span class="heart" data-heart></span></h2>
-      <div class="panel wood-frame reveal">
-        <p id="rsvp-counter" hidden>已有 <b id="rsvp-count">0</b> 位宾客送出祝福 ♥</p>
-        <form id="rsvp-form" novalidate>
-          <div class="field">
-            <label for="rsvp-name">您的姓名 <span class="req">*</span></label>
-            <input type="text" id="rsvp-name" maxlength="20" placeholder="怎么称呼您？" autocomplete="name">
-          </div>
-          <div class="field">
-            <label for="rsvp-phone">联系电话（选填）</label>
-            <input type="tel" id="rsvp-phone" maxlength="11" placeholder="方便我们联系您" autocomplete="tel">
-          </div>
-          <div class="field">
-            <label>您能来吗？ <span class="req">*</span></label>
-            <div class="radio-pills" id="rsvp-attending">
-              <label class="checked" data-val="yes"><input type="radio" name="attending" value="yes" checked>♥ 一定到</label>
-              <label class="no" data-val="no"><input type="radio" name="attending" value="no">遗憾缺席</label>
-            </div>
-          </div>
-          <div class="field" id="rsvp-count-field">
-            <label>参加人数</label>
-            <div class="stepper">
-              <button type="button" id="stepper-minus" aria-label="减一人">−</button>
-              <span class="stepper-val" id="stepper-val">1</span>
-              <button type="button" id="stepper-plus" aria-label="加一人">＋</button>
-            </div>
-          </div>
-          <div class="field" id="rsvp-accommodation-field">
-            <label>是否需要住宿 <span class="req">*</span></label>
-            <div class="radio-pills accommodation-pills" id="rsvp-accommodation">
-              <label data-val="yes"><input type="radio" name="needsAccommodation" value="yes">需要住宿</label>
-              <label data-val="no"><input type="radio" name="needsAccommodation" value="no">无需住宿</label>
-            </div>
-          </div>
-          <div id="accommodation-dates" hidden>
-            <div class="field">
-              <label for="rsvp-checkin">入住时间 <span class="req">*</span></label>
-              <input type="datetime-local" id="rsvp-checkin">
-            </div>
-            <div class="field">
-              <label for="rsvp-checkout">退房时间 <span class="req">*</span></label>
-              <input type="datetime-local" id="rsvp-checkout">
-            </div>
-          </div>
-          <div class="field">
-            <label for="rsvp-msg">祝福留言（选填）</label>
-            <textarea id="rsvp-msg" maxlength="200" placeholder="想对我们说的话……"></textarea>
-            <span class="msg-count"><b id="rsvp-msg-count">0</b> / 200</span>
-          </div>
-          <p class="rsvp-error" id="rsvp-error" role="alert" hidden></p>
-          <button class="btn btn-primary btn-block" id="rsvp-submit" type="submit">✉ 提交回执</button>
-          <p class="form-note">提交即表示同意我们仅为本次婚礼筹备用途保存以上信息。</p>
-        </form>
-        <div class="rsvp-success hidden" id="rsvp-success">
-          <span class="big-heart" data-icon="gift"></span>
-          <p id="rsvp-success-text">收到你的祝福啦！♥</p>
-          <p class="rsvp-summary" id="rsvp-success-summary" hidden></p>
-          <button class="btn btn-block" type="button" id="rsvp-edit" style="margin-top:24px" hidden>修改我的回执</button>
-          <button class="btn btn-block" type="button" id="rsvp-again" style="margin-top:16px">再填一份（帮家人报名）</button>
-        </div>
-        <p class="hidden" id="rsvp-disabled-hint" style="text-align:center;color:#7a4e2d">回执功能尚未开通，详见 README 说明。</p>
-      </div>
-    </section>
-
-    <!-- 山谷友人：祝福信 + 礼物 + 席位墙 -->
-    <section class="section guests-section sec-checker sec-dirt" id="guests">
-      <h2 class="sec-title guests-title"><span class="heart" data-heart></span>山谷友人<span class="heart" data-heart></span></h2>
-      <div class="blessing-card reveal">
-        <div class="mascot-peek" id="guests-mascots" aria-hidden="true"></div>
-        <div class="blessing-title">一封来自山谷的信</div>
-        <p id="blessing-text">春风暖，遇良辰。<br>喝满你们的喜酒，听完一年的花。<br>把最好的故事，变成共同的回忆。</p>
-      </div>
-      <div class="inventory-row reveal" id="gift-row" aria-label="婚礼礼物栏"></div>
-      <div class="animal-grid reveal" id="animal-grid" aria-label="山谷动物席位墙"></div>
-      <div class="harvest-row reveal" id="harvest-row" aria-hidden="true"></div>
     </section>
 
     <!-- 页脚 -->

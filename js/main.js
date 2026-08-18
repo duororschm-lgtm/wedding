@@ -278,16 +278,8 @@
         $('#blessing-text').innerHTML = g.blessing.split('\n').join('<br>');
       }
 
-      /* 礼物栏：婚戒 + 丰收果实 */
+      /* 礼物栏（背包）：婚戒 + 丰收果实 + 山谷动物全家 */
       var gifts = ['ring', 'strawberry', 'blueberry', 'carrot', 'pumpkin'];
-      var row = $('#gift-row');
-      gifts.forEach(function (name) {
-        var cell = makeDiv('gift-cell');
-        cell.appendChild(PixelArt.sprite(name, 5));
-        row.appendChild(cell);
-      });
-
-      /* 动物席位墙：云端旧配置只有 4 只时用默认名单补齐到 11 只 */
       var DEFAULT_ANIMALS = [
         { sprite: 'chicken', name: '咕咕' },
         { sprite: 'cow', name: '哞哞' },
@@ -310,28 +302,83 @@
         });
       }
 
-      var grid = $('#animal-grid');
+      var row = $('#gift-row');
+      gifts.forEach(function (name) {
+        var cell = makeDiv('gift-cell');
+        cell.appendChild(PixelArt.sprite(name, 5));
+        row.appendChild(cell);
+      });
       animals.forEach(function (a) {
-        var cell = makeDiv('animal-cell');
-        var icon = makeDiv('animal-icon');
+        var cell = makeDiv('gift-cell');
         var spriteName = (a.sprite && PixelArt.SPRITES[a.sprite]) ? a.sprite : 'chicken';
-        icon.appendChild(PixelArt.sprite(spriteName, 6));
+        cell.appendChild(PixelArt.sprite(spriteName, 5));
+        cell.title = a.name || '';
+        row.appendChild(cell);
+      });
+
+      /* 肖像墙 4×4：12 位山谷村民 + 新郎新娘 + 「?」+ 神秘嘉宾 */
+      var PORTRAITS = [
+        { img: 'assets/tpl/characters/abigail.png', name: 'Abigail' },
+        { img: 'assets/tpl/characters/haley.png',   name: 'Haley' },
+        { img: 'assets/tpl/characters/emily.png',   name: 'Emily' },
+        { img: 'assets/tpl/characters/leah.png',    name: 'Leah' },
+        { img: 'assets/tpl/characters/penny.png',   name: 'Penny' },
+        { img: 'assets/tpl/characters/maru.png',    name: 'Maru' },
+        { img: 'assets/tpl/characters/sam.png',     name: 'Sam' },
+        { img: 'assets/tpl/characters/elliott.png', name: 'Elliott' },
+        { img: 'assets/tpl/characters/harvey.png',  name: 'Harvey' },
+        { img: 'assets/tpl/characters/alex.png',    name: 'Alex' },
+        { img: 'assets/tpl/characters/shane.png',   name: 'Shane' },
+        { img: 'assets/tpl/characters/lewis.png',   name: 'Lewis' }
+      ];
+      var grid = $('#animal-grid');
+      PORTRAITS.forEach(function (p) {
+        var cell = makeDiv('portrait-cell');
+        var img = document.createElement('img');
+        img.src = p.img;
+        img.alt = p.name;
+        img.loading = 'lazy';
+        cell.appendChild(img);
         var name = makeDiv('animal-name');
-        name.textContent = a.name || '';
+        name.textContent = p.name;
+        cell.appendChild(name);
+        grid.appendChild(cell);
+      });
+
+      /* 新郎新娘：生成头像就绪后换成 assets/tpl/characters/couple-groom.png / couple-bride.png */
+      [
+        { sprite: 'groom', name: '新郎 ' + (C.couple.groom || '新郎') },
+        { sprite: 'bride', name: '新娘 ' + (C.couple.bride || '新娘') }
+      ].forEach(function (c) {
+        var cell = makeDiv('portrait-cell');
+        var icon = makeDiv('portrait-icon');
+        icon.appendChild(PixelArt.sprite(c.sprite, 6));
         cell.appendChild(icon);
+        var name = makeDiv('animal-name');
+        name.textContent = c.name;
         cell.appendChild(name);
         grid.appendChild(cell);
       });
 
       /* “等待你的席位” */
-      var you = makeDiv('animal-cell you');
+      var you = makeDiv('portrait-cell you');
       var q = document.createElement('span');
       q.textContent = '?';
       var label = makeDiv('animal-name');
-      label.textContent = '等待你的席位';
+      label.textContent = '你的席位';
       you.appendChild(q);
       you.appendChild(label);
       grid.appendChild(you);
+
+      /* 神秘嘉宾（生成补位头像后替换此格图片） */
+      var mystery = makeDiv('portrait-cell');
+      var mi = makeDiv('portrait-icon');
+      mi.appendChild(PixelArt.sprite('star', 6));
+      mystery.appendChild(mi);
+      var mName = makeDiv('animal-name');
+      mName.textContent = '神秘嘉宾';
+      mystery.appendChild(mName);
+      grid.appendChild(mystery);
     }
 
     /* ============================================================
@@ -552,10 +599,10 @@
     function buildHero() {
       var scene = $('#hero-scene');
 
-      /* 远景山丘（视差最远层，Gemini 生成图已转像素并抠白） */
+      /* 远景山丘（视差最远层，模板 hero-mountains 山景图） */
       var hills = makeDiv('hills');
       var hillsImg = document.createElement('img');
-      hillsImg.src = 'assets/bg/pix/hills-far.png';
+      hillsImg.src = 'assets/tpl/hero-mountains.webp';
       hillsImg.alt = '';
       hillsImg.onerror = function () { hills.style.display = 'none'; };
       hills.appendChild(hillsImg);
@@ -897,7 +944,7 @@
        十、婚礼节：场景大图 + 花瓣雨（故事对话与照片墙紧随其后）
        ============================================================ */
     function buildCeremony() {
-      var src = (C.ceremony && C.ceremony.src) || 'assets/bg/pix/ceremony.png';
+      var src = (C.ceremony && C.ceremony.src) || 'assets/tpl/marriage-scene.webp';
       var board = $('#ceremony-board');
       var img = $('#ceremony-img');
       img.src = src;
@@ -916,13 +963,17 @@
       $('#ceremony').appendChild(petals);
     }
 
-    /* ---------- mascot 队伍：小鸡换色（hue-rotate）+ 错峰跳跃 ---------- */
+    /* ---------- mascot 队伍：祝尼魔换色（hue-rotate）+ 错峰跳跃 ---------- */
     function buildMascots(containerSel, n) {
       var el = $(containerSel);
       if (!el) return;
       for (var i = 0; i < n; i++) {
         var m = makeDiv('mascot');
-        m.appendChild(PixelArt.sprite('chicken', 4));
+        var img = document.createElement('img');
+        img.src = 'assets/tpl/junimo.gif';
+        img.alt = '';
+        img.onerror = function () { m.style.display = 'none'; };
+        m.appendChild(img);
         m.style.filter = 'hue-rotate(' + (i * 60) + 'deg)';
         m.style.animationDelay = (-i * 0.33).toFixed(2) + 's';
         el.appendChild(m);
