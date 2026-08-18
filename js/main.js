@@ -1086,7 +1086,11 @@
         }).then(function (r) {
           submitBtn.disabled = false;
           submitBtn.textContent = '✉ 提交回执';
-          if (r.error) { showError('提交失败，请检查网络后重试'); return; }
+          if (r.error) {
+            console.error('rsvp insert failed:', r.error);
+            showError('提交失败：' + (r.error.message || '网络异常') + ' · 请检查网络后重试');
+            return;
+          }
           savedRsvp = {
             id: (r.data && r.data[0] && r.data[0].id) || null,
             editToken: row.edit_token,
