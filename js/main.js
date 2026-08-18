@@ -186,9 +186,7 @@
         var k = el.getAttribute('data-icon');
         if (ICONS[k]) el.appendChild(PixelArt.sprite(ICONS[k][0], ICONS[k][1]));
       });
-      var mapBtn = $('#map-btn');
-      mapBtn.appendChild(PixelArt.sprite('pin', 5));
-      mapBtn.appendChild(document.createTextNode('地图导航'));
+      // 地图导航按钮 = 模板红色 pixel-button，文案已写在 HTML，不再注入图钉精灵
       var icsBtn = $('#ics-btn');
       icsBtn.appendChild(PixelArt.sprite('calendar', 5));
       icsBtn.appendChild(document.createTextNode('添加到日历'));
@@ -853,13 +851,14 @@
       $('#map-img').onerror = function () { $('#map-frame').classList.add('hidden'); };
       $('#map-pin').hidden = false;
 
-      /* 交通指引两张小卡片 */
+      /* 卡片头部：现实世界目的地（酒店名） */
+      $('#map-venue').textContent = (v && v.name) || '';
+
+      /* 交通指引两张小卡片（图标已是模板 bus/horse 图片，只填文案） */
       var tr = C.transport || {};
       if (!tr.public && !tr.car) {
         $('#map .transport-grid').classList.add('hidden');
       } else {
-        $('#transport-bus').appendChild(PixelArt.sprite('bus', 3));
-        $('#transport-car').appendChild(PixelArt.sprite('car', 3));
         $('#transport-public').textContent = tr.public || '';
         $('#transport-car-text').textContent = tr.car || '';
       }

@@ -10,7 +10,7 @@
   <meta property="og:title" content="我们的婚礼请柬">
   <meta property="og:description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 
@@ -120,15 +120,17 @@
         <img id="map-img" src="assets/tpl/pelican-town.webp" alt="山谷地图" loading="lazy">
         <div class="map-pin" id="map-pin" hidden aria-hidden="true"><span data-icon="pin"></span></div>
       </div>
-      <div class="panel wood-frame reveal map-panel">
+      <article class="location-card reveal">
+        <p class="location-overline">现实世界目的地</p>
+        <h3 class="location-venue" id="map-venue"></h3>
         <div class="transport-grid">
-          <div class="transport-cell"><span class="transport-icon" id="transport-bus"></span><b>公共交通</b><span class="transport-text" id="transport-public"></span></div>
-          <div class="transport-cell"><span class="transport-icon" id="transport-car"></span><b>自驾前往</b><span class="transport-text" id="transport-car-text"></span></div>
+          <div class="transport-cell"><img src="assets/tpl/bus.png" alt="巴士" loading="lazy"><b>公共交通</b><span class="transport-text" id="transport-public"></span></div>
+          <div class="transport-cell"><img src="assets/tpl/horse.png" alt="自驾" loading="lazy"><b>自驾前往</b><span class="transport-text" id="transport-car-text"></span></div>
         </div>
-        <a class="btn btn-wood btn-block" id="map-btn" target="_blank" rel="noopener"></a>
-        <button class="btn btn-block" id="copy-addr-btn" type="button"></button>
-        <button class="btn btn-block" id="ics-btn" type="button"></button>
-      </div>
+        <a class="pixel-button" id="map-btn" target="_blank" rel="noopener">打开地图导航</a>
+        <button class="card-btn" id="copy-addr-btn" type="button"></button>
+        <button class="card-btn" id="ics-btn" type="button"></button>
+      </article>
     </section>
 
     <!-- 回执 -->
@@ -346,7 +348,7 @@
 
   <script src="assets/js/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="js/pixelart.js?v=3"></script>
-  <script src="js/main.js?v=3"></script>
+  <script src="js/pixelart.js?v=4"></script>
+  <script src="js/main.js?v=4"></script>
 </body>
 </html>

@@ -69,6 +69,33 @@
       if (pc) out.push('firstPhoto=' + pc.src.split('/').pop() + (pc.naturalWidth ? ':ok' : ':FAIL'));
       else out.push('firstPhoto=missing-card');
 
+      var lc = d.querySelector('#map .location-card');
+      out.push('locationCard=' + (lc ? 'ok' : 'FAIL'));
+      if (lc) {
+        var imgs = lc.querySelectorAll('img');
+        var miss2 = [];
+        Array.prototype.forEach.call(imgs, function (im) {
+          if (!im.complete || im.naturalWidth === 0) miss2.push(im.src.split('/').pop());
+        });
+        out.push('transportImgs=' + imgs.length + ':' + (miss2.length ? 'FAIL ' + miss2.join(',') : 'ok'));
+        out.push('overline=' + (lc.querySelector('.location-overline') || {}).textContent);
+        out.push('venue=' + (lc.querySelector('#map-venue') || {}).textContent);
+        out.push('publicText=' + (lc.querySelector('#transport-public') || {}).textContent);
+        out.push('carText=' + (lc.querySelector('#transport-car-text') || {}).textContent);
+        var mb = lc.querySelector('#map-btn');
+        out.push('mapBtn=' + (mb ? mb.textContent + ':' + (mb.classList.contains('pixel-button') ? 'pixel' : 'NOPIXEL') + ':' + (mb.href.indexOf('uri.amap.com') >= 0 ? 'amap' : 'NOAMAP') : 'FAIL'));
+        out.push('copyBtn=' + ((lc.querySelector('#copy-addr-btn') || {}).textContent || 'FAIL'));
+        out.push('icsBtn=' + ((lc.querySelector('#ics-btn') || {}).textContent || 'FAIL'));
+      }
+
+      if (lc) {
+        d.body.classList.add('night');
+        var ncs = w.getComputedStyle(lc);
+        var ncell = w.getComputedStyle(lc.querySelector('.transport-cell'));
+        out.push('nightCard=' + ncs.backgroundColor + '/' + ncs.borderColor);
+        out.push('nightCell=' + ncell.backgroundColor + '/' + ncell.borderColor);
+      }
+
       var wide = [];
       Array.prototype.forEach.call(d.querySelectorAll('body *'), function (el) {
         var r = el.getBoundingClientRect();
