@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>verify-harness</title>
+</head>
+<body>
+<iframe id="f" style="width:360px;height:900px;border:0"></iframe>
+<pre id="report">REPORT\nPENDING</pre>
+<script>
+  var W = parseInt(location.search.match(/w=(\d+)/)[1], 10) || 360;
+  document.getElementById('f').style.width = W + 'px';
+  try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) {}
+  var rep = document.getElementById('report');
+  var f = document.getElementById('f');
+  f.src = '/index.html';
+  f.addEventListener('load', function () { setTimeout(run, 10000); });
+
+  function run() {
+    var out = [];
+    try {
+      var w = f.contentWindow, d = f.contentDocument;
+      var vw = w.innerWidth;
+      out.push('vw=' + vw);
+      out.push('bodyOverflow=' + (d.body.scrollWidth - vw));
+
+      var hero = d.getElementById('hero');
+      out.push('heroH=' + hero.offsetHeight);
+      var title = d.querySelector('.game-title');
+      if (title) {
+        var tcs = w.getComputedStyle(title);
+        out.push('gameTitle=' + tcs.fontFamily.split(',')[0] + '/' + tcs.fontSize + '/' + tcs.color);
+      }
+      out.push('heroCn=' + (d.querySelector('.hero-cn') || {}).textContent);
+      out.push('heroDate=' + (d.querySelector('.hero-date') || {}).textContent);
+      out.push('eyebrow=' + (d.getElementById('hero-save') || {}).textContent);
+      out.push('stars=' + d.querySelectorAll('#hero-scene .sky-stars i').length);
+      var hills = d.querySelector('#hero-scene .hills');
+      if (hills) { var hcs = w.getComputedStyle(hills); out.push('hills=' + hcs.height + '/bottom=' + hcs.bottom); }
+      var scBtn = d.getElementById('hero-scroll-btn');
+      if (scBtn) { var r = scBtn.getBoundingClientRect(); out.push('scrollBtn=' + (r.width | 0) + 'x' + (r.height | 0)); }
+      var moon = w.getComputedStyle(hero, '::after');
+      out.push('moon=' + moon.width + '/' + moon.height + '/' + moon.backgroundColor);
+
+      Array.prototype.forEach.call(d.querySelectorAll('.section'), function (s) {
+        if (s.scrollWidth - s.clientWidth > 1) {
+          out.push('overflow:' + (s.id || s.className.split(' ')[0]) + '=' + (s.scrollWidth - s.clientWidth));
+        }
+      });
+
+      var fox = d.querySelector('.notice-deco img');
+      out.push('fox=' + (fox && fox.naturalWidth ? 'ok' : 'FAIL'));
+      out.push('flowers=' + d.querySelectorAll('#notice-flowers svg').length);
+
+      var st = d.querySelector('.sec-title');
+      if (st) {
+        var before = w.getComputedStyle(st, '::before');
+        out.push('secTitleBefore=' + before.content + '/size=' + before.fontSize + '/color=' + before.color);
+      }
+
+      out.push('portraitCells=' + d.querySelectorAll('.portrait-cell').length);
+      var miss = [];
+      Array.prototype.forEach.call(d.querySelectorAll('.portrait-cell img'), function (im) {
+        if (!im.complete || im.naturalWidth === 0) miss.push(im.src.split('/').pop());
+      });
+      out.push('portraitMiss=' + (miss.length ? miss.join(',') : 'none'));
+
+      var pc = d.querySelector('#gallery-grid .photo-card img');
+      if (pc) out.push('firstPhoto=' + pc.src.split('/').pop() + (pc.naturalWidth ? ':ok' : ':FAIL'));
+      else out.push('firstPhoto=missing-card');
+
+      var wide = [];
+      Array.prototype.forEach.call(d.querySelectorAll('body *'), function (el) {
+        var r = el.getBoundingClientRect();
+        if (r.width > vw + 2 && r.width < 3000) {
+          var tag = (el.className && typeof el.className === 'string' && el.className.split(' ')[0]) || el.tagName;
+          if (wide.length < 14) wide.push(tag + ':' + (r.width | 0));
+        }
+      });
+      out.push('wideElements=' + (wide.join(' ') || 'none'));
+      rep.textContent = 'REPORT\n' + out.join('\n');
+    } catch (e) {
+      rep.textContent = 'REPORT\nERROR ' + (e && e.message);
+    }
+  }
+</script>
+</body>
+</html>

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>我们的婚礼请柬</title>
   <meta name="description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
-  <!-- 微信分享预览图：等生成的封面图 assets/tpl/cover.png 就位后替换下面地址 -->
-  <meta property="og:image" content="https://duororschm-lgtm.github.io/wedding/share-preview.png">
+  <!-- 微信分享预览图（AI 生成合照封面） -->
+  <meta property="og:image" content="https://duororschm-lgtm.github.io/wedding/assets/tpl/cover.webp">
   <meta property="og:title" content="我们的婚礼请柬">
   <meta property="og:description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
@@ -26,28 +26,17 @@
   <!-- ============ 请柬正文 ============ -->
   <main id="invitation" aria-hidden="true">
 
-    <!-- 主视觉 -->
+    <!-- 主视觉（模板第一页式：夜空渐变 + 月亮 + 星光 + 金色大字 + 山景） -->
     <header id="hero">
       <div id="hero-scene" aria-hidden="true"></div>
-      <svg class="bunting" width="400" height="60" viewBox="0 0 400 60" shape-rendering="crispEdges" aria-hidden="true">
-        <line x1="0" y1="12" x2="400" y2="12" stroke="#4a2f1d" stroke-width="3"/>
-        <polygon points="20,14 56,14 38,48" fill="#e85d75"/>
-        <polygon points="58,14 94,14 76,48" fill="#ffc94d"/>
-        <polygon points="96,14 132,14 114,48" fill="#6dbe45"/>
-        <polygon points="134,14 170,14 152,48" fill="#4a7fd4"/>
-        <polygon points="172,14 208,14 190,48" fill="#ffb3c1"/>
-        <polygon points="210,14 246,14 228,48" fill="#e85d75"/>
-        <polygon points="248,14 284,14 266,48" fill="#ffc94d"/>
-        <polygon points="286,14 322,14 304,48" fill="#6dbe45"/>
-        <polygon points="324,14 360,14 342,48" fill="#4a7fd4"/>
-        <polygon points="362,14 398,14 380,48" fill="#ffb3c1"/>
-      </svg>
-      <p class="save-date reveal" id="hero-save"></p>
-      <h1 class="hero-names reveal"><span id="name-groom"></span><span class="amp">♥</span><span id="name-bride"></span></h1>
-      <p class="hero-date reveal" id="hero-date"></p>
-      <p class="hero-line reveal">诚 邀 您 出 席 我 们 的 婚 礼</p>
-      <p class="hero-guest reveal" id="hero-guest" hidden></p>
-      <p class="scroll-hint">▼ 往下看 ▼</p>
+      <div class="hero-copy">
+        <p class="eyebrow reveal" id="hero-save"></p>
+        <h1 class="game-title reveal"><span>WEDDING</span></h1>
+        <p class="hero-cn reveal"><span id="name-groom"></span> × <span id="name-bride"></span></p>
+        <p class="hero-date reveal" id="hero-date"></p>
+        <p class="hero-guest reveal" id="hero-guest" hidden></p>
+      </div>
+      <button class="scroll-hint" id="hero-scroll-btn" type="button">点击开启邀请函<b>↓</b></button>
     </header>
 
     <!-- 邀请函 -->
@@ -85,6 +74,9 @@
         <div class="schedule-grid" id="schedule-grid"></div>
         <div class="wedding-cal" id="wedding-cal" aria-label="婚礼月历"></div>
       </div>
+      <!-- 山谷邮差狐狸 + 花草装饰 -->
+      <div class="notice-deco" aria-hidden="true"><img src="assets/tpl/fox-deco.webp" alt="" loading="lazy"></div>
+      <div id="notice-flowers" aria-hidden="true"></div>
     </section>
 
     <!-- 任务卡：参加我们的婚礼 -->

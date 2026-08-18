@@ -162,8 +162,8 @@
       $('#name-bride').textContent = bride;
       $('#foot-groom').textContent = groom;
       $('#foot-bride').textContent = bride;
-      $('#hero-date').textContent = dateStr + ' 星期' + weekChar + (lunarStr ? '\n' + lunarStr : '');
-      $('#hero-save').textContent = 'SAVE THE DATE · ' + dateStr;
+      $('#hero-date').textContent = dateStr.replace(/\./g, ' · ');
+      $('#hero-save').textContent = 'SAVE THE DATE';
       $('#info-date').textContent =
         C.date.year + '年' + C.date.month + '月' + C.date.day + '日 星期' + weekChar + '\n' + timeStr + ' 开席' + (lunarStr ? '\n' + lunarStr : '');
       $('#info-venue').textContent = (C.venue.name || '') + ' · ' + (C.venue.address || '');
@@ -345,15 +345,17 @@
         grid.appendChild(cell);
       });
 
-      /* 新郎新娘：生成头像就绪后换成 assets/tpl/characters/couple-groom.png / couple-bride.png */
+      /* 新郎新娘（AI 生成头像，已像素化处理） */
       [
-        { sprite: 'groom', name: '新郎 ' + (C.couple.groom || '新郎') },
-        { sprite: 'bride', name: '新娘 ' + (C.couple.bride || '新娘') }
+        { img: 'assets/tpl/characters/couple-groom.png', name: '新郎 ' + (C.couple.groom || '新郎') },
+        { img: 'assets/tpl/characters/couple-bride.png', name: '新娘 ' + (C.couple.bride || '新娘') }
       ].forEach(function (c) {
         var cell = makeDiv('portrait-cell');
-        var icon = makeDiv('portrait-icon');
-        icon.appendChild(PixelArt.sprite(c.sprite, 6));
-        cell.appendChild(icon);
+        var img = document.createElement('img');
+        img.src = c.img;
+        img.alt = c.name;
+        img.loading = 'lazy';
+        cell.appendChild(img);
         var name = makeDiv('animal-name');
         name.textContent = c.name;
         cell.appendChild(name);
@@ -370,11 +372,13 @@
       you.appendChild(label);
       grid.appendChild(you);
 
-      /* 神秘嘉宾（生成补位头像后替换此格图片） */
+      /* 神秘嘉宾（狐狸） */
       var mystery = makeDiv('portrait-cell');
-      var mi = makeDiv('portrait-icon');
-      mi.appendChild(PixelArt.sprite('star', 6));
-      mystery.appendChild(mi);
+      var mImg = document.createElement('img');
+      mImg.src = 'assets/tpl/characters/mystery.png';
+      mImg.alt = '神秘嘉宾';
+      mImg.loading = 'lazy';
+      mystery.appendChild(mImg);
       var mName = makeDiv('animal-name');
       mName.textContent = '神秘嘉宾';
       mystery.appendChild(mName);
@@ -594,12 +598,12 @@
     })();
 
     /* ============================================================
-       四、主视觉场景（远山 + 树线 + 日月 + 云 + 新人）
+       四、主视觉场景（模板第一页式：山景 + 星光）
        ============================================================ */
     function buildHero() {
       var scene = $('#hero-scene');
 
-      /* 远景山丘（视差最远层，模板 hero-mountains 山景图） */
+      /* 远山（模板 hero-mountains 山景图，顶部渐隐融入天空） */
       var hills = makeDiv('hills');
       var hillsImg = document.createElement('img');
       hillsImg.src = 'assets/tpl/hero-mountains.webp';
@@ -607,92 +611,45 @@
       hillsImg.onerror = function () { hills.style.display = 'none'; };
       hills.appendChild(hillsImg);
 
-      /* 树线（中景） */
-      var treeLine = makeDiv('tree-line');
-      var treeImg = document.createElement('img');
-      treeImg.src = 'assets/bg/pix/tree-line.png';
-      treeImg.alt = '';
-      treeImg.onerror = function () { treeLine.style.display = 'none'; };
-      treeLine.appendChild(treeImg);
-
-      /* 夜间星空背景（18 点后整屏显示） */
-      var nightSky = makeDiv('night-sky');
-      var nightImg = document.createElement('img');
-      nightImg.src = 'assets/bg/pix/night-sky.png';
-      nightImg.alt = '';
-      nightSky.appendChild(nightImg);
-
-      /* 花瓣雨 */
-      var petals = makeDiv('petals');
-      for (var p = 0; p < 12; p++) {
-        var petal = makeDiv('petal');
-        petal.style.left = ((p * 89) % 100) + '%';
-        petal.style.animationDelay = (p * 0.9 % 8).toFixed(1) + 's';
-        petal.style.animationDuration = (7 + (p * 37) % 5).toFixed(1) + 's';
-        petal.appendChild(PixelArt.sprite('petal', 3));
-        petals.appendChild(petal);
+      /* 闪烁星光 */
+      var stars = makeDiv('sky-stars');
+      for (var s = 0; s < 26; s++) {
+        var star = document.createElement('i');
+        star.style.left = ((s * 89) % 96 + 2) + '%';
+        star.style.top = ((s * 61) % 38 + 2) + '%';
+        star.style.setProperty('--twinkle', (1.8 + (s * 37) % 24 / 10).toFixed(1) + 's');
+        star.style.animationDelay = ((s * 0.7) % 4).toFixed(1) + 's';
+        stars.appendChild(star);
       }
 
-      /* 太阳 + 月亮 + 星星（夜间自动切换） */
-      var sun = makeDiv('sun'); sun.appendChild(PixelArt.sprite('sun', 7));
-      var moon = makeDiv('moon'); moon.appendChild(PixelArt.sprite('moon', 7));
-      var stars = makeDiv('stars');
-      var shadows = [];
-      for (var s = 0; s < 34; s++) {
-        shadows.push(((s * 137) % 460 + 10) + 'px ' + ((s * 79) % 150 + 8) + 'px 0 #fff8d0');
-      }
-      stars.style.cssText = 'width:2px;height:2px;box-shadow:' + shadows.join(',');
-
-      var cloud1 = makeDiv('cloud-1'); cloud1.appendChild(PixelArt.sprite('cloud', 5));
-      var cloud2 = makeDiv('cloud-2'); cloud2.appendChild(PixelArt.sprite('cloud', 4));
-
-      var couple = makeDiv('couple');
-      var g = PixelArt.sprite('groom', 5);
-      g.style.cssText = 'display:inline-block;margin-right:6px';
-      var b = PixelArt.sprite('bride', 5);
-      b.style.cssText = 'display:inline-block';
-      couple.appendChild(g); couple.appendChild(b);
-
-      var heart = makeDiv('heart-float'); heart.appendChild(PixelArt.sprite('heart', 4));
-
-      /* 草地：深绿条 + 草丛 */
-      var grassline = makeDiv('grassline');
-      var band = makeDiv('grass-band');
-      var tufts = makeDiv('grass-tufts');
-      for (var i = 0; i < 14; i++) tufts.appendChild(PixelArt.sprite('grassTuft', 3));
-      grassline.appendChild(tufts);
-      grassline.appendChild(band);
-      for (var f = 0; f < 3; f++) {
-        var flower = PixelArt.sprite('flower', 5);
-        flower.style.cssText = 'position:absolute;bottom:' + (6 + f * 12) + 'px;left:' + (12 + f * 30) + '%;pointer-events:none';
-        grassline.appendChild(flower);
-      }
-
-      scene.appendChild(nightSky);
       scene.appendChild(hills);
-      scene.appendChild(treeLine);
-      scene.appendChild(sun);
-      scene.appendChild(moon);
       scene.appendChild(stars);
-      scene.appendChild(cloud1);
-      scene.appendChild(cloud2);
-      scene.appendChild(heart);
-      scene.appendChild(couple);
-      scene.appendChild(petals);
-      scene.appendChild(grassline);
+
+      /* 点击开启邀请函 → 滚到邀请函区 */
+      $('#hero-scroll-btn').addEventListener('click', function () {
+        var el = $('#notice');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      });
     }
 
-    /* ---------- 视差：滚动时不同层以不同速度微移 ---------- */
+    /* ---------- 邀请函区装饰：左下角花草 ---------- */
+    function buildNoticeDeco() {
+      var holder = $('#notice-flowers');
+      if (!holder) return;
+      var spots = [
+        ['4%', 8, -18], ['12%', 2, 8], ['20%', 10, -6]
+      ];
+      spots.forEach(function (s) {
+        var fl = PixelArt.sprite('flower', 5);
+        fl.style.cssText = 'left:' + s[0] + ';bottom:' + s[1] + 'px;transform:rotate(' + s[2] + 'deg)';
+        holder.appendChild(fl);
+      });
+    }
+
+    /* ---------- 视差：滚动时山景层微移 ---------- */
     function buildParallax() {
       var layers = [
-        [$('#hero-scene .hills'), 0.04],
-        [$('#hero-scene .tree-line'), 0.09],
-        [$('#hero-scene .sun'), 0.07],
-        [$('#hero-scene .moon'), 0.07],
-        [$('#hero-scene .cloud-1'), 0.12],
-        [$('#hero-scene .cloud-2'), 0.2],
-        [$('#hero-scene .heart-float'), 0.16],
-        [$('#hero-scene .couple'), 0.05, true]   // true = 保留 -50% 居中
+        [$('#hero-scene .hills'), 0.04]
       ].filter(function (l) { return l[0]; });
       var heroH = function () { return $('#hero').offsetHeight; };
       var ticking = false;
@@ -800,7 +757,13 @@
       var lightboxImg = $('#lightbox-img');
       lightbox.addEventListener('click', function () { lightbox.hidden = true; });
 
-      (C.photos || []).forEach(function (base, i) {
+      /* 合照作为照片墙首图（编辑器照片排在其后） */
+      var photos = (C.photos || []).slice();
+      if (!photos.some(function (p) { return String(p).indexOf('couple-photo') !== -1; })) {
+        photos.unshift('assets/bg/pix/couple-photo');
+      }
+
+      photos.forEach(function (base, i) {
         var card = makeDiv('photo-card reveal');
         var img = document.createElement('img');
         img.loading = 'lazy';
@@ -808,7 +771,7 @@
         if (/^https?:/.test(base)) {
           img.src = base;                        // 云端图片：直接用
         } else {
-          var exts = ['jpg', 'jpeg', 'png', 'svg'];
+          var exts = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
           (function attach(n) {
             img.onerror = function () { if (n + 1 < exts.length) attach(n + 1); };
             img.src = base + '.' + exts[n];
@@ -1727,6 +1690,7 @@
       fillIcons();
       buildEnvelope();
       buildHero();
+      buildNoticeDeco();
       buildParallax();
       buildCeremony();
       buildDialogue();
