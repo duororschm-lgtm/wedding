@@ -52,3 +52,8 @@ create policy "管理员可看访问统计" on public.visits
 -- ============================================================
 alter table public.rsvp drop constraint if exists rsvp_guest_count_check;
 alter table public.rsvp add constraint rsvp_guest_count_check check (guest_count between 0 and 20);
+
+-- 已登录用户（如浏览器同时登录过编辑器）提交回执也放行
+drop policy if exists "已登录也可提交回执" on public.rsvp;
+create policy "已登录也可提交回执" on public.rsvp
+  for insert to authenticated with check (true);

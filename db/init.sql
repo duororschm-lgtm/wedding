@@ -63,6 +63,8 @@ alter table public.site_settings enable row level security;
 -- 回执：宾客可提交（看不到别人的）；登录者（你）可查看/删除
 create policy "宾客可提交回执" on public.rsvp
   for insert to anon with check (true);
+create policy "已登录也可提交回执" on public.rsvp
+  for insert to authenticated with check (true);
 create policy "管理员可查看回执" on public.rsvp
   for select to authenticated using (true);
 create policy "管理员可删除回执" on public.rsvp

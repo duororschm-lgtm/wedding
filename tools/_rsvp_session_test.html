@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>rsvp-session-test</title>
+</head>
+<body>
+<iframe id="f" style="width:360px;height:900px;border:0"></iframe>
+<pre id="report">REPORT
+PENDING</pre>
+<script>
+  var rep = document.getElementById('report');
+  var timeline = [];
+  try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) {}
+  /* 模拟「浏览器曾登录过编辑器」：v1 supabase-js 的 localStorage 键是 supabase.auth.token */
+  try {
+    localStorage.setItem('supabase.auth.token', JSON.stringify({
+      access_token: 'fake.invalid.jwt', refresh_token: 'fake', token_type: 'bearer',
+      expires_at: 4102444800, user: { id: 'fake-user' }
+    }));
+  } catch (e) {}
+  var f = document.getElementById('f');
+  f.src = '/index.html';
+  f.addEventListener('load', function () {
+    var w = f.contentWindow;
+    w.addEventListener('error', function (e) { timeline.push('JSERROR: ' + (e.message || '')); });
+    w.addEventListener('unhandledrejection', function (e) {
+      timeline.push('REJECTION: ' + ((e.reason && (e.reason.message || e.reason)) || ''));
+    });
+    setTimeout(run, 10000);
+  });
+
+  function snap(d) {
+    var btn = d.getElementById('rsvp-submit');
+    var errEl = d.getElementById('rsvp-error');
+    return 't=btn:' + btn.textContent +
+      '|formHidden:' + d.getElementById('rsvp-form').classList.contains('hidden') +
+      '|success:' + !d.getElementById('rsvp-success').classList.contains('hidden') +
+      '|err:' + (errEl && !errEl.hidden ? errEl.textContent : '');
+  }
+
+  function run() {
+    var d = f.contentDocument;
+    var yesPill = d.querySelector('#rsvp-attending label[data-val="yes"]');
+    if (!yesPill) { rep.textContent = 'REPORT\nERROR no-pill'; return; }
+    yesPill.click();
+    d.getElementById('rsvp-name').value = '登录态测试';
+    timeline.push('0s ' + snap(d));
+    d.getElementById('rsvp-submit').click();
+    var t = 0;
+    var iv = setInterval(function () {
+      t += 500;
+      timeline.push((t / 1000) + 's ' + snap(d));
+      if (t >= 16000) {
+        clearInterval(iv);
+        rep.textContent = 'REPORT\n' + timeline.join('\n');
+      }
+    }, 500);
+  }
+</script>
+</body>
+</html>

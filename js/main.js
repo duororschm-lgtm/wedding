@@ -59,7 +59,9 @@
     var sb = null;
     try {
       if (window.supabase && C0.supabase && C0.supabase.url && C0.supabase.anonKey) {
-        sb = window.supabase.createClient(C0.supabase.url, C0.supabase.anonKey);
+        /* persistSession:false —— 请柬是公开匿名页，不能继承同域名下
+           编辑器/后台的登录态（带登录态提交回执会被 RLS 拦，报 42501） */
+        sb = window.supabase.createClient(C0.supabase.url, C0.supabase.anonKey, { persistSession: false });
       }
     } catch (e) { sb = null; }
 
@@ -1050,7 +1052,8 @@
         var phone = $('#rsvp-phone').value.trim();
         var attending = pills.filter(function (x) { return x.classList.contains('checked'); })[0].getAttribute('data-val') === 'yes';
         var msg = msgEl.value.trim();
-        var needsAcc = attending && accPills.filter(function (x) { return x.classList.contains('checked'); })[0].getAttribute('data-val') === 'yes';
+        var accChecked = accPills.filter(function (x) { return x.classList.contains('checked'); })[0];
+        var needsAcc = attending && !!accChecked && accChecked.getAttribute('data-val') === 'yes'; // 没点住宿选项时默认按「无需住宿」处理
         var checkIn = $('#rsvp-checkin').value;
         var checkOut = $('#rsvp-checkout').value;
 
@@ -1082,7 +1085,11 @@
             .then(function () { /* 忽略删除结果 */ });
         }
         chain.then(function () {
-          return supabase.from('rsvp').insert([row]);
+          /* 12 秒超时兜底：弱网下 fetch 可能永远挂起，避免按钮一直「正在送往山谷……」 */
+          return Promise.race([
+            supabase.from('rsvp').insert([row]),
+            new Promise(function (_, rej) { setTimeout(function () { rej(new Error('请求超时（12 秒无响应）')); }, 12000); })
+          ]);
         }).then(function (r) {
           submitBtn.disabled = false;
           submitBtn.textContent = '✉ 提交回执';
@@ -1100,6 +1107,10 @@
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRsvp)); } catch (e2) { /* 忽略 */ }
           showSuccess(savedRsvp);
           refreshCount();
+        }).catch(function (e) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '✉ 提交回执';
+          showError('提交失败：' + (e && e.message || '网络异常') + ' · 请检查网络后重试');
         });
       });
 

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>rsvp-plain-test</title>
+</head>
+<body>
+<iframe id="f" style="width:360px;height:900px;border:0"></iframe>
+<pre id="report">REPORT
+PENDING</pre>
+<script>
+  var rep = document.getElementById('report');
+  var timeline = [];
+  try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) {}
+  /* 不塞任何登录态：纯匿名访客 */
+  var f = document.getElementById('f');
+  f.src = '/index.html';
+  f.addEventListener('load', function () {
+    var w = f.contentWindow;
+    w.addEventListener('error', function (e) { timeline.push('JSERROR: ' + (e.message || '')); });
+    setTimeout(run, 10000);
+  });
+
+  function snap(d) {
+    var btn = d.getElementById('rsvp-submit');
+    var errEl = d.getElementById('rsvp-error');
+    return 't=btn:' + btn.textContent +
+      '|success:' + !d.getElementById('rsvp-success').classList.contains('hidden') +
+      '|err:' + (errEl && !errEl.hidden ? errEl.textContent : '');
+  }
+
+  function run() {
+    var d = f.contentDocument;
+    var yesPill = d.querySelector('#rsvp-attending label[data-val="yes"]');
+    if (!yesPill) { rep.textContent = 'REPORT\nERROR no-pill'; return; }
+    yesPill.click();
+    d.getElementById('rsvp-name').value = '纯匿名测试';
+    timeline.push('0s ' + snap(d));
+    d.getElementById('rsvp-submit').click();
+    var t = 0;
+    var iv = setInterval(function () {
+      t += 500;
+      timeline.push((t / 1000) + 's ' + snap(d));
+      if (t >= 14000) {
+        clearInterval(iv);
+        rep.textContent = 'REPORT\n' + timeline.join('\n');
+      }
+    }, 500);
+  }
+</script>
+</body>
+</html>
