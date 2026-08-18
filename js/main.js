@@ -1012,8 +1012,8 @@
         photoDeck = deck;
         if (!deck.length) { board.classList.add('hidden'); return; }
 
-        buildGallery();      /* 网格（照片部分） */
-        buildViewToggle();   /* 轮播/网格切换按钮 */
+        buildGallery();      /* 照片网格（默认收起，展开/收起按钮在照片栏） */
+        buildGalleryToggle();
         startSlideshow();    /* 双层 crossfade 轮播 */
       });
 
@@ -1073,7 +1073,7 @@
             if (cur) cur.classList.remove('on');
             nxt.classList.add('on');
             updateDots();
-            if (!instant && auto && photoDeck.length > 1 && !pausedBy.view && !pausedBy.lightbox) {
+            if (!instant && auto && photoDeck.length > 1 && !pausedBy.lightbox) {
               timer = setTimeout(advance, intervalMs);
             }
           });
@@ -1081,7 +1081,7 @@
 
         function advance() {
           clearTimeout(timer);
-          if (photoDeck.length <= 1 || !auto || pausedBy.view || pausedBy.lightbox) return;
+          if (photoDeck.length <= 1 || !auto || pausedBy.lightbox) return;
           /* 离屏（动画暂停）或画框被隐藏时挂起，1 秒后再看 */
           if (slidesEl.closest('.animations-paused') || !board.offsetParent) {
             timer = setTimeout(advance, 1000);
@@ -1095,7 +1095,7 @@
           resume: function (src) {
             pausedBy[src] = false;
             clearTimeout(timer);
-            if (!pausedBy.view && !pausedBy.lightbox && auto && photoDeck.length > 1) {
+            if (!pausedBy.lightbox && auto && photoDeck.length > 1) {
               timer = setTimeout(advance, intervalMs);
             }
           },
@@ -1111,39 +1111,33 @@
       }
     }
 
-    /* ---------- 轮播 / 网格视图切换（状态记忆） ---------- */
-    function buildViewToggle() {
-      var VIEW_KEY = 'pixel-wedding-gallery-view';
-      var row = $('#view-toggle-row');
-      var btn = $('#gallery-view-btn');
+    /* ---------- 照片栏展开 / 收起（默认收起，首次展开解锁成就） ---------- */
+    function buildGalleryToggle() {
+      var btn = $('#gallery-toggle-btn');
+      var grid = $('#gallery-grid');
+      var expanded = false;
 
-      /* 没有照片（deck 只剩场景图）：隐藏切换按钮，退化为静态场景图 */
+      /* 没有照片（deck 只剩场景图）：不显示展开按钮 */
       if (photoDeck.length <= 1) {
-        row.classList.add('hidden');
+        btn.classList.add('hidden');
         return;
       }
 
-      var view = 'slides';
-      try { view = localStorage.getItem(VIEW_KEY) || 'slides'; } catch (e) { /* 忽略 */ }
-
-      function applyView(v) {
-        view = v;
-        $('#ceremony-board').hidden = (v === 'grid');
-        $('#ceremony-dots').hidden = (v === 'grid');
-        $('.gallery-heading').hidden = (v === 'slides');
-        $('#gallery-grid').hidden = (v === 'slides');
-        btn.textContent = v === 'grid' ? '仪式轮播' : '照片网格视图';
-        if (slideshowApi) {
-          if (v === 'grid') slideshowApi.pause('view');
-          else slideshowApi.resume('view');
+      function setExpanded(on) {
+        expanded = on;
+        grid.hidden = !on;
+        btn.textContent = on ? '收起照片' : '展开照片';
+        if (on) {
+          achievements.unlock('photoAlbum');
+          /* 卡片是序列就绪后异步插入的，入场动画的 IO 早已跑过，
+             没人给它们加 .visible（一直 opacity:0）—— 展开时错峰补上 */
+          $all('#gallery-grid .photo-card').forEach(function (c, i) {
+            setTimeout(function () { c.classList.add('visible'); }, i * 60);
+          });
         }
-        try { localStorage.setItem(VIEW_KEY, v); } catch (e) { /* 忽略 */ }
       }
 
-      btn.addEventListener('click', function () {
-        applyView(view === 'grid' ? 'slides' : 'grid');
-      });
-      applyView(view);
+      btn.addEventListener('click', function () { setExpanded(!expanded); });
     }
 
     /* ---------- mascot 队伍：祝尼魔换色（hue-rotate）+ 错峰跳跃 ---------- */
@@ -1505,6 +1499,7 @@
         { id: 'treasureAll', icon: 'star', name: '心之所向', desc: '集齐全部爱心' },
         { id: 'firework', icon: 'firework', name: '夜空绽放', desc: '放一场像素烟花' },
         { id: 'fortune', icon: 'crystal', name: '好运签', desc: '抽取一次今日运势' },
+        { id: 'photoAlbum', icon: 'calendar', name: '打开回忆簿', desc: '展开全部婚礼照片' },
         { id: 'rsvp', icon: 'gift', name: '送出祝福', desc: '提交出席回执' }
       ];
       var earnedCount = DEFS.filter(function (d) { return earned[d.id]; }).length;
@@ -1773,7 +1768,7 @@
       /* 六个藏宝点（固定位置 + 闪烁提示，找到即消失） */
       var HOSTS = [
         { sel: '#dialog-box', styles: { top: '4px', right: '8px' } },
-        { sel: '#view-toggle-row', styles: { top: '-10px', right: '8%' } },
+        { sel: '#gallery-toggle-row', styles: { top: '-10px', right: '8%' } },
         { sel: '#notice .panel', styles: { bottom: '70px', left: '6px' } },
         { sel: '#quest .quest-card', styles: { top: '48px', left: '10px' } },
         { sel: '#guests .animal-grid', styles: { top: '-8px', left: '12%' } },
@@ -1925,7 +1920,7 @@
       buildHero();
       buildNoticeDeco();
       buildParallax();
-      buildCeremony();   /* 照片序列就绪后由它内部调 buildGallery / buildViewToggle */
+      buildCeremony();   /* 照片序列就绪后由它内部调 buildGallery */
       buildDialogue();
       buildCountdown();
       buildInfo();

@@ -484,10 +484,10 @@ body.night #notice-flowers svg { filter: brightness(0.75); }
   border: 3px solid rgba(138, 91, 43, 0.4);
 }
 /* [hidden] 会输给作者样式的 display，显式补回（同 #lightbox 惯例） */
-#gallery-grid[hidden], .gallery-heading[hidden], #view-toggle-row[hidden] { display: none; }
+#gallery-grid[hidden], .gallery-heading[hidden], .gallery-toggle-row[hidden] { display: none; }
 
-/* 轮播 / 网格视图切换按钮 */
-.view-toggle-row {
+/* 照片栏展开 / 收起按钮 */
+.gallery-toggle-row {
   position: relative;   /* 寻宝爱心锚点宿主 */
   display: flex;
   justify-content: center;

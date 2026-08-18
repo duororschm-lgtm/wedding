@@ -124,7 +124,7 @@
       var tt = d.getElementById('treasure-total');
       out.push('treasureHearts=' + d.querySelectorAll('.treasure-heart').length + '/' + (tt ? tt.textContent : '?'));
       out.push('photoCards=' + d.querySelectorAll('#gallery-grid .photo-card').length);
-      out.push('viewBtn=' + (d.getElementById('gallery-view-btn') || {}).textContent);
+      out.push('toggleBtn=' + (d.getElementById('gallery-toggle-btn') || {}).textContent);
 
       /* 滚到婚礼节，等一张切换（离屏时轮播会暂停，滚动后应恢复） */
       var board = d.getElementById('ceremony-board');
@@ -151,25 +151,42 @@
               setTimeout(function () {
                 var p3 = snapSlides();
                 out.push('pauseResume=' + (p2 !== p3 ? 'moved(ok)' : 'STUCK(FAIL)'));
-                /* 切到网格视图 */
-                d.getElementById('gallery-view-btn').click();
-                out.push('gridView_boardHidden=' + d.getElementById('ceremony-board').hidden);
-                out.push('gridView_gridHidden=' + d.getElementById('gallery-grid').hidden);
-                out.push('gridView_btn=' + d.getElementById('gallery-view-btn').textContent);
-                /* 灯箱：点第一张 → 翻页 → 关闭 */
-                var card = d.querySelector('#gallery-grid .photo-card');
-                card.click();
+                /* 展开照片（默认收起）：点按钮 → 网格显示 + 成就解锁 */
+                d.getElementById('gallery-toggle-btn').click();
+                out.push('expand_boardHidden=' + d.getElementById('ceremony-board').hidden);
+                out.push('expand_gridHidden=' + d.getElementById('gallery-grid').hidden);
+                out.push('expand_btn=' + d.getElementById('gallery-toggle-btn').textContent);
+                out.push('achUnlock=' + ((w.localStorage.getItem('pixel-wedding-ach') || '').indexOf('photoAlbum') >= 0 ? 'yes' : 'NO'));
+                /* 成就图鉴里应有「打开回忆簿」且已解锁 */
+                d.getElementById('ft-ach').click();
+                var achItems = d.querySelectorAll('#ach-list .ach-item');
+                out.push('achItems=' + achItems.length);
+                out.push('achPhoto=' + (achItems[9] ? achItems[9].textContent : 'MISSING'));
+                d.getElementById('ach-close').click();
+                /* 等错峰 .visible 补完，卡片必须真实可见 */
                 setTimeout(function () {
-                  out.push('lb_open=' + !d.getElementById('lightbox').hidden);
-                  out.push('lb_counter=' + d.getElementById('lb-counter').textContent);
-                  d.getElementById('lb-next').click();
-                  out.push('lb_next=' + d.getElementById('lb-counter').textContent);
-                  d.getElementById('lb-close').click();
+                  var card0 = d.querySelector('#gallery-grid .photo-card');
+                  out.push('cardVisible=' + (card0.classList.contains('visible') ? 'yes' : 'NO'));
+                  out.push('cardOpacity=' + (w.getComputedStyle(card0).opacity | 0));
+                  /* 收起 → 再展开：状态来回正常 */
+                  d.getElementById('gallery-toggle-btn').click();
+                  out.push('collapse_gridHidden=' + d.getElementById('gallery-grid').hidden);
+                  d.getElementById('gallery-toggle-btn').click();
+                  out.push('reexpand_gridHidden=' + d.getElementById('gallery-grid').hidden);
+                  /* 灯箱：点第一张 → 翻页 → 关闭 */
+                  card0.click();
                   setTimeout(function () {
-                    out.push('lb_closed=' + d.getElementById('lightbox').hidden);
-                    rep.textContent = 'REPORT\n' + out.join('\n');
+                    out.push('lb_open=' + !d.getElementById('lightbox').hidden);
+                    out.push('lb_counter=' + d.getElementById('lb-counter').textContent);
+                    d.getElementById('lb-next').click();
+                    out.push('lb_next=' + d.getElementById('lb-counter').textContent);
+                    d.getElementById('lb-close').click();
+                    setTimeout(function () {
+                      out.push('lb_closed=' + d.getElementById('lightbox').hidden);
+                      rep.textContent = 'REPORT\n' + out.join('\n');
+                    }, 600);
                   }, 600);
-                }, 600);
+                }, 1800);
               }, 6000);
             }, 5000);
           }, 5500);
