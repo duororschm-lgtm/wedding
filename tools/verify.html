@@ -13,7 +13,7 @@
   try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) {}
   var rep = document.getElementById('report');
   var f = document.getElementById('f');
-  f.src = '/index.html';
+  f.src = '../index.html';
   f.addEventListener('load', function () { setTimeout(run, 10000); });
 
   function run() {
