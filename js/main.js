@@ -15,6 +15,31 @@
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function makeDiv(cls) { var d = document.createElement('div'); d.className = cls; return d; }
 
+  /* 照片地址解析：https 直用；本地路径按 jpg→jpeg→png→webp→svg 依次探测，
+     返回 Promise，全部失败时 resolve(null) */
+  function resolvePhoto(base) {
+    if (/^https?:/.test(base)) return Promise.resolve(base);
+    var exts = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+    return new Promise(function (resolve) {
+      (function attach(n) {
+        var img = new Image();
+        img.onload = function () { resolve(base + '.' + exts[n]); };
+        img.onerror = function () {
+          if (n + 1 < exts.length) attach(n + 1);
+          else resolve(null);
+        };
+        img.src = base + '.' + exts[n];
+      })(0);
+    });
+  }
+
+  /* 字符串 hash（宾客墙按名字分配固定像素头像） */
+  function hashStr(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+
   /* ---------- 提示气泡 ---------- */
   var toastTimer = null;
   function toast(msg) {
@@ -316,73 +341,51 @@
         row.appendChild(cell);
       });
 
-      /* 肖像墙 4×4：12 位山谷村民 + 新郎新娘 + 「?」+ 神秘嘉宾 */
-      var PORTRAITS = [
-        { img: 'assets/tpl/characters/abigail.png', name: 'Abigail' },
-        { img: 'assets/tpl/characters/haley.png',   name: 'Haley' },
-        { img: 'assets/tpl/characters/emily.png',   name: 'Emily' },
-        { img: 'assets/tpl/characters/leah.png',    name: 'Leah' },
-        { img: 'assets/tpl/characters/penny.png',   name: 'Penny' },
-        { img: 'assets/tpl/characters/maru.png',    name: 'Maru' },
-        { img: 'assets/tpl/characters/sam.png',     name: 'Sam' },
-        { img: 'assets/tpl/characters/elliott.png', name: 'Elliott' },
-        { img: 'assets/tpl/characters/harvey.png',  name: 'Harvey' },
-        { img: 'assets/tpl/characters/alex.png',    name: 'Alex' },
-        { img: 'assets/tpl/characters/shane.png',   name: 'Shane' },
-        { img: 'assets/tpl/characters/lewis.png',   name: 'Lewis' }
-      ];
+      /* 宾客墙：回执「出席」的宾客（像素头像 + 名字 + 同行人数） */
+      buildGuestWall();
+    }
+
+    /* ---------- 宾客墙：公开读出席名单（rsvp_wall RPC，安全函数） ---------- */
+    var WALL_SPRITES = ['groom', 'bride', 'chicken', 'cow', 'cat', 'dog', 'sheep',
+                        'pig', 'rabbit', 'duck', 'fox', 'squirrel', 'owl'];
+
+    function buildGuestWall() {
       var grid = $('#animal-grid');
-      PORTRAITS.forEach(function (p) {
-        var cell = makeDiv('portrait-cell');
-        var img = document.createElement('img');
-        img.src = p.img;
-        img.alt = p.name;
-        img.loading = 'lazy';
-        cell.appendChild(img);
-        var name = makeDiv('animal-name');
-        name.textContent = p.name;
-        cell.appendChild(name);
-        grid.appendChild(cell);
+      grid.innerHTML = '';
+
+      function empty(msg) {
+        var e = makeDiv('wall-empty');
+        e.appendChild(PixelArt.sprite('heartSm', 3));
+        var p = document.createElement('p');
+        p.textContent = msg;
+        e.appendChild(p);
+        grid.appendChild(e);
+      }
+
+      if (!supabase) { empty('开通回执后，出席的宾客会在这里亮起头像 ♥'); return; }
+
+      /* 查询对象没有 .catch，先 Promise.resolve 收敛，再赛跑 3 秒超时兜底 */
+      var query = Promise.resolve(supabase.rpc('rsvp_wall')).catch(function () { return null; });
+      var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 3000); });
+      Promise.race([query, timeout]).then(function (r) {
+        if (!r || r.error || !r.data) { empty('宾客墙正在布置中，稍后再来看看 ♥'); return; }
+        if (!r.data.length) { empty('还没有回执，第一个送上祝福的会出现在这里 ♥'); return; }
+        r.data.forEach(function (row) {
+          var cell = makeDiv('portrait-cell');
+          var ic = makeDiv('portrait-icon');
+          ic.appendChild(PixelArt.sprite(WALL_SPRITES[hashStr(row.name) % WALL_SPRITES.length], 3));
+          cell.appendChild(ic);
+          var nm = makeDiv('animal-name');
+          nm.textContent = row.name;
+          cell.appendChild(nm);
+          if ((row.guest_count || 1) > 1) {
+            var c = makeDiv('guest-count');
+            c.textContent = '+' + (row.guest_count - 1) + ' 人同行';
+            cell.appendChild(c);
+          }
+          grid.appendChild(cell);
+        });
       });
-
-      /* 新郎新娘（AI 生成头像，已像素化处理） */
-      [
-        { img: 'assets/tpl/characters/couple-groom.png', name: '新郎 ' + (C.couple.groom || '新郎') },
-        { img: 'assets/tpl/characters/couple-bride.png', name: '新娘 ' + (C.couple.bride || '新娘') }
-      ].forEach(function (c) {
-        var cell = makeDiv('portrait-cell');
-        var img = document.createElement('img');
-        img.src = c.img;
-        img.alt = c.name;
-        img.loading = 'lazy';
-        cell.appendChild(img);
-        var name = makeDiv('animal-name');
-        name.textContent = c.name;
-        cell.appendChild(name);
-        grid.appendChild(cell);
-      });
-
-      /* “等待你的席位” */
-      var you = makeDiv('portrait-cell you');
-      var q = document.createElement('span');
-      q.textContent = '?';
-      var label = makeDiv('animal-name');
-      label.textContent = '你的席位';
-      you.appendChild(q);
-      you.appendChild(label);
-      grid.appendChild(you);
-
-      /* 神秘嘉宾（狐狸） */
-      var mystery = makeDiv('portrait-cell');
-      var mImg = document.createElement('img');
-      mImg.src = 'assets/tpl/characters/mystery.png';
-      mImg.alt = '神秘嘉宾';
-      mImg.loading = 'lazy';
-      mystery.appendChild(mImg);
-      var mName = makeDiv('animal-name');
-      mName.textContent = '神秘嘉宾';
-      mystery.appendChild(mName);
-      grid.appendChild(mystery);
     }
 
     /* ============================================================
@@ -748,40 +751,114 @@
     }
 
     /* ============================================================
-       六、照片墙（jpg → jpeg → png → svg 占位图自动回退；
-           编辑器上传的云端图片是完整网址，直接使用）
+       六、照片：共享照片序列（轮播/网格/灯箱共用）
+       ============================================================ */
+    /* photoDeck：[0] = 仪式场景图，[1..] = 我们的照片（含合照兜底）
+       { src, isScene }；slideshowApi 由 buildCeremony 填充 */
+    var photoDeck = [];
+    var slideshowApi = null;
+
+    /* ---------- 全屏灯箱：左右翻页 + 滑动 + 计数器 ---------- */
+    var lightbox = (function () {
+      var el = $('#lightbox');
+      var stage = el.querySelector('.lb-stage');
+      var img = $('#lightbox-img');
+      var counter = $('#lb-counter');
+      var index = 0;
+      var openCount = 0;
+      var closeTimer = null;
+
+      function deck() { return photoDeck; }
+
+      function show(i) {
+        var d = deck();
+        if (!d.length) return;
+        index = (i + d.length) % d.length;
+        counter.textContent = (index + 1) + ' / ' + d.length;
+        img.style.opacity = '0';
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(function () {
+          img.src = d[index].src;
+          var restore = function () {
+            img.style.opacity = '1';
+            img.onload = null;
+          };
+          img.onload = restore;
+          if (img.complete && img.naturalWidth > 0) restore();
+        }, 200);
+      }
+
+      function open(i) {
+        clearTimeout(closeTimer);
+        el.hidden = false;
+        requestAnimationFrame(function () { el.classList.add('on'); });
+        document.body.classList.add('lock');
+        openCount++;
+        if (slideshowApi) slideshowApi.pause('lightbox');
+        show(i);
+      }
+
+      function close() {
+        el.classList.remove('on');
+        closeTimer = setTimeout(function () {
+          el.hidden = true;
+          openCount--;
+          document.body.classList.remove('lock');
+          if (slideshowApi) slideshowApi.resume('lightbox');
+        }, 250);
+      }
+
+      $('#lb-prev').addEventListener('click', function (e) { e.stopPropagation(); show(index - 1); });
+      $('#lb-next').addEventListener('click', function (e) { e.stopPropagation(); show(index + 1); });
+      $('#lb-close').addEventListener('click', function (e) { e.stopPropagation(); close(); });
+      img.addEventListener('click', function (e) { e.stopPropagation(); show(index + 1); });
+      el.addEventListener('click', function (e) {
+        if (e.target !== stage && e.target !== el) return;  /* 点到按钮/图不关 */
+        close();
+      });
+
+      /* 触摸滑动翻页（横向位移 > 40px 且横大于纵） */
+      var tx = 0, ty = 0;
+      stage.addEventListener('touchstart', function (e) {
+        tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+      }, { passive: true });
+      stage.addEventListener('touchend', function (e) {
+        var dx = e.changedTouches[0].clientX - tx;
+        var dy = e.changedTouches[0].clientY - ty;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) show(index + (dx < 0 ? 1 : -1));
+      }, { passive: true });
+
+      document.addEventListener('keydown', function (e) {
+        if (!openCount) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === 'ArrowLeft') show(index - 1);
+        else if (e.key === 'ArrowRight') show(index + 1);
+      });
+
+      return {
+        open: open,
+        close: close,
+        isOpen: function () { return openCount > 0; }
+      };
+    })();
+
+    /* ============================================================
+       六·一、照片网格（编辑器上传的云端图片是完整网址，直接使用）
        ============================================================ */
     function buildGallery() {
       var grid = $('#gallery-grid');
-      var lightbox = $('#lightbox');
-      var lightboxImg = $('#lightbox-img');
-      lightbox.addEventListener('click', function () { lightbox.hidden = true; });
+      grid.innerHTML = '';
 
-      /* 合照作为照片墙首图（编辑器照片排在其后） */
-      var photos = (C.photos || []).slice();
-      if (!photos.some(function (p) { return String(p).indexOf('couple-photo') !== -1; })) {
-        photos.unshift('assets/bg/pix/couple-photo');
-      }
-
-      photos.forEach(function (base, i) {
+      /* 网格只显示照片部分（photoDeck[0] 是场景图，不进网格）；
+         deck 索引 = 网格索引 + 1，与灯箱计数对齐 */
+      photoDeck.slice(1).forEach(function (entry, i) {
         var card = makeDiv('photo-card reveal');
         var img = document.createElement('img');
         img.loading = 'lazy';
         img.alt = '婚礼照片 ' + (i + 1);
-        if (/^https?:/.test(base)) {
-          img.src = base;                        // 云端图片：直接用
-        } else {
-          var exts = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
-          (function attach(n) {
-            img.onerror = function () { if (n + 1 < exts.length) attach(n + 1); };
-            img.src = base + '.' + exts[n];
-          })(0);
-        }
+        img.src = entry.src;
         card.appendChild(img);
-        card.addEventListener('click', function () {
-          lightboxImg.src = img.src;
-          lightbox.hidden = false;
-        });
+        card.addEventListener('click', function () { lightbox.open(i + 1); });
         grid.appendChild(card);
       });
     }
@@ -905,14 +982,40 @@
     }
 
     /* ============================================================
-       十、婚礼节：场景大图 + 花瓣雨（故事对话与照片墙紧随其后）
+       十、婚礼节：照片轮播（场景图 + 我们的照片混播）+ 花瓣雨
        ============================================================ */
     function buildCeremony() {
-      var src = (C.ceremony && C.ceremony.src) || 'assets/tpl/marriage-scene.webp';
       var board = $('#ceremony-board');
-      var img = $('#ceremony-img');
-      img.src = src;
-      img.onerror = function () { board.classList.add('hidden'); };
+      var slidesEl = $('#ceremony-slides');
+      var dotsEl = $('#ceremony-dots');
+      var scene = (C.ceremony && C.ceremony.src) || 'assets/tpl/marriage-scene.webp';
+      var g = C.gallery || {};
+      var reduceMotion = false;
+      try {
+        reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      } catch (e) { /* 忽略 */ }
+      var auto = g.auto !== false && !reduceMotion;
+      var intervalMs = g.intervalMs || 4000;
+      var fadeMs = reduceMotion ? 0 : (g.fadeMs || 800);
+
+      /* 照片序列：场景图 + 我们的照片（合照兜底，同旧照片墙逻辑） */
+      var photos = (C.photos || []).slice();
+      if (!photos.some(function (p) { return String(p).indexOf('couple-photo') !== -1; })) {
+        photos.unshift('assets/bg/pix/couple-photo');
+      }
+      var bases = [scene].concat(photos);
+
+      /* 逐张探测可用地址（失败剔除），全部就绪后启动轮播/网格/切换 */
+      Promise.all(bases.map(resolvePhoto)).then(function (urls) {
+        var deck = [];
+        urls.forEach(function (u, i) { if (u) deck.push({ src: u, isScene: i === 0 }); });
+        photoDeck = deck;
+        if (!deck.length) { board.classList.add('hidden'); return; }
+
+        buildGallery();      /* 网格（照片部分） */
+        buildViewToggle();   /* 轮播/网格切换按钮 */
+        startSlideshow();    /* 双层 crossfade 轮播 */
+      });
 
       /* 花瓣雨（复用 hero 的 .petal 样式） */
       var petals = makeDiv('petals');
@@ -925,6 +1028,122 @@
         petals.appendChild(petal);
       }
       $('#ceremony').appendChild(petals);
+
+      function startSlideshow() {
+        var layers = $all('#ceremony-slides .slide');
+        var idx = 0, timer = null;
+        var pausedBy = { view: false, lightbox: false };
+
+        slidesEl.style.setProperty('--fade-ms', fadeMs + 'ms');
+
+        /* 指示点（>1 张才有；点选可跳片） */
+        if (photoDeck.length > 1) {
+          dotsEl.hidden = false;
+          photoDeck.forEach(function (_, i) {
+            var d = makeDiv('dot');
+            d.addEventListener('click', function () { show(i); });
+            dotsEl.appendChild(d);
+          });
+        }
+
+        function updateDots() {
+          $all('.dot', dotsEl).forEach(function (d, i) {
+            d.classList.toggle('active', i === idx);
+          });
+        }
+
+        /* 换层加载：先挂 onload 再设 src，缓存图用 complete 兜底 */
+        function loadLayer(layer, i, onDone) {
+          var entry = photoDeck[i];
+          layer.classList.toggle('pix', !!entry.isScene);
+          var done = false;
+          function fire() { if (!done) { done = true; onDone(); } }
+          layer.onload = fire;
+          layer.onerror = fire;
+          layer.src = entry.src;
+          if (layer.complete && layer.naturalWidth > 0) fire();
+        }
+
+        function show(i, instant) {
+          clearTimeout(timer);
+          idx = (i + photoDeck.length) % photoDeck.length;
+          var cur = layers.filter(function (l) { return l.classList.contains('on'); })[0];
+          var nxt = (cur === layers[0]) ? layers[1] : layers[0];
+          loadLayer(nxt, idx, function () {
+            if (cur) cur.classList.remove('on');
+            nxt.classList.add('on');
+            updateDots();
+            if (!instant && auto && photoDeck.length > 1 && !pausedBy.view && !pausedBy.lightbox) {
+              timer = setTimeout(advance, intervalMs);
+            }
+          });
+        }
+
+        function advance() {
+          clearTimeout(timer);
+          if (photoDeck.length <= 1 || !auto || pausedBy.view || pausedBy.lightbox) return;
+          /* 离屏（动画暂停）或画框被隐藏时挂起，1 秒后再看 */
+          if (slidesEl.closest('.animations-paused') || !board.offsetParent) {
+            timer = setTimeout(advance, 1000);
+            return;
+          }
+          show(idx + 1);
+        }
+
+        slideshowApi = {
+          pause: function (src) { pausedBy[src] = true; clearTimeout(timer); },
+          resume: function (src) {
+            pausedBy[src] = false;
+            clearTimeout(timer);
+            if (!pausedBy.view && !pausedBy.lightbox && auto && photoDeck.length > 1) {
+              timer = setTimeout(advance, intervalMs);
+            }
+          },
+          current: function () { return idx; },
+          deckLength: function () { return photoDeck.length; }
+        };
+
+        /* 点幻灯片 → 全屏灯箱看当前这张 */
+        slidesEl.addEventListener('click', function () { lightbox.open(idx); });
+
+        /* 首张（无渐隐），随后启动自动轮播 */
+        show(0);
+      }
+    }
+
+    /* ---------- 轮播 / 网格视图切换（状态记忆） ---------- */
+    function buildViewToggle() {
+      var VIEW_KEY = 'pixel-wedding-gallery-view';
+      var row = $('#view-toggle-row');
+      var btn = $('#gallery-view-btn');
+
+      /* 没有照片（deck 只剩场景图）：隐藏切换按钮，退化为静态场景图 */
+      if (photoDeck.length <= 1) {
+        row.classList.add('hidden');
+        return;
+      }
+
+      var view = 'slides';
+      try { view = localStorage.getItem(VIEW_KEY) || 'slides'; } catch (e) { /* 忽略 */ }
+
+      function applyView(v) {
+        view = v;
+        $('#ceremony-board').hidden = (v === 'grid');
+        $('#ceremony-dots').hidden = (v === 'grid');
+        $('.gallery-heading').hidden = (v === 'slides');
+        $('#gallery-grid').hidden = (v === 'slides');
+        btn.textContent = v === 'grid' ? '仪式轮播' : '照片网格视图';
+        if (slideshowApi) {
+          if (v === 'grid') slideshowApi.pause('view');
+          else slideshowApi.resume('view');
+        }
+        try { localStorage.setItem(VIEW_KEY, v); } catch (e) { /* 忽略 */ }
+      }
+
+      btn.addEventListener('click', function () {
+        applyView(view === 'grid' ? 'slides' : 'grid');
+      });
+      applyView(view);
     }
 
     /* ---------- mascot 队伍：祝尼魔换色（hue-rotate）+ 错峰跳跃 ---------- */
@@ -1554,7 +1773,7 @@
       /* 六个藏宝点（固定位置 + 闪烁提示，找到即消失） */
       var HOSTS = [
         { sel: '#dialog-box', styles: { top: '4px', right: '8px' } },
-        { sel: '#gallery-grid', styles: { top: '-10px', right: '8%' } },
+        { sel: '#view-toggle-row', styles: { top: '-10px', right: '8%' } },
         { sel: '#notice .panel', styles: { bottom: '70px', left: '6px' } },
         { sel: '#quest .quest-card', styles: { top: '48px', left: '10px' } },
         { sel: '#guests .animal-grid', styles: { top: '-8px', left: '12%' } },
@@ -1706,9 +1925,8 @@
       buildHero();
       buildNoticeDeco();
       buildParallax();
-      buildCeremony();
+      buildCeremony();   /* 照片序列就绪后由它内部调 buildGallery / buildViewToggle */
       buildDialogue();
-      buildGallery();
       buildCountdown();
       buildInfo();
       buildMap();

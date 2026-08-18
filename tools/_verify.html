@@ -105,7 +105,76 @@
         }
       });
       out.push('wideElements=' + (wide.join(' ') || 'none'));
-      rep.textContent = 'REPORT\n' + out.join('\n');
+
+      /* ===== 轮播/网格/灯箱/宾客墙检测（虚拟时间快进） ===== */
+      function snapSlides() {
+        var on = d.querySelector('#ceremony-slides .slide.on');
+        var src = on ? on.src.split('/').pop() : 'none';
+        var layers = d.querySelectorAll('#ceremony-slides .slide').length;
+        return 'layers=' + layers + '|on=' + src;
+      }
+      out.push('boardHidden=' + d.getElementById('ceremony-board').hidden);
+      out.push('gridHidden=' + d.getElementById('gallery-grid').hidden);
+      out.push('headingHidden=' + d.querySelector('.gallery-heading').hidden);
+      out.push('dots=' + d.querySelectorAll('#ceremony-dots .dot').length);
+      out.push('slides0=' + snapSlides());
+      out.push('wallEmpty=' + (d.querySelector('#animal-grid .wall-empty') ? 'yes' : 'no'));
+      out.push('portraitCells=' + d.querySelectorAll('.portrait-cell').length);
+      out.push('giftCells=' + d.querySelectorAll('#gift-row .gift-cell').length);
+      var tt = d.getElementById('treasure-total');
+      out.push('treasureHearts=' + d.querySelectorAll('.treasure-heart').length + '/' + (tt ? tt.textContent : '?'));
+      out.push('photoCards=' + d.querySelectorAll('#gallery-grid .photo-card').length);
+      out.push('viewBtn=' + (d.getElementById('gallery-view-btn') || {}).textContent);
+
+      /* 滚到婚礼节，等一张切换（离屏时轮播会暂停，滚动后应恢复） */
+      var board = d.getElementById('ceremony-board');
+      var sec = d.getElementById('ceremony');
+      try { board.scrollIntoView({ block: 'center' }); } catch (e) { w.scrollTo(0, 10000); }
+      setTimeout(function () {
+        out.push('boardTop=' + (board.getBoundingClientRect().top | 0));
+        var paused = sec.classList.contains('animations-paused');
+        out.push('pausedClass=' + paused);
+        /* 无头虚拟时间下 IO 不重算，手动模拟 on-intersect 回调 */
+        if (paused) { sec.classList.remove('animations-paused'); out.push('pausedCleared=manual'); }
+        setTimeout(function () {
+          var a = snapSlides();
+          setTimeout(function () {
+            var b = snapSlides();
+            out.push('slidesAdvance=' + (a !== b ? 'moved(' + a.split('|')[1] + '->' + b.split('|')[1] + ')' : 'STUCK'));
+            /* 暂停路径：加回 class 应停，移除后应恢复 */
+            sec.classList.add('animations-paused');
+            var p1 = snapSlides();
+            setTimeout(function () {
+              var p2 = snapSlides();
+              out.push('pauseHold=' + (p1 !== p2 ? 'ADVANCED(FAIL)' : 'STUCK(ok)'));
+              sec.classList.remove('animations-paused');
+              setTimeout(function () {
+                var p3 = snapSlides();
+                out.push('pauseResume=' + (p2 !== p3 ? 'moved(ok)' : 'STUCK(FAIL)'));
+                /* 切到网格视图 */
+                d.getElementById('gallery-view-btn').click();
+                out.push('gridView_boardHidden=' + d.getElementById('ceremony-board').hidden);
+                out.push('gridView_gridHidden=' + d.getElementById('gallery-grid').hidden);
+                out.push('gridView_btn=' + d.getElementById('gallery-view-btn').textContent);
+                /* 灯箱：点第一张 → 翻页 → 关闭 */
+                var card = d.querySelector('#gallery-grid .photo-card');
+                card.click();
+                setTimeout(function () {
+                  out.push('lb_open=' + !d.getElementById('lightbox').hidden);
+                  out.push('lb_counter=' + d.getElementById('lb-counter').textContent);
+                  d.getElementById('lb-next').click();
+                  out.push('lb_next=' + d.getElementById('lb-counter').textContent);
+                  d.getElementById('lb-close').click();
+                  setTimeout(function () {
+                    out.push('lb_closed=' + d.getElementById('lightbox').hidden);
+                    rep.textContent = 'REPORT\n' + out.join('\n');
+                  }, 600);
+                }, 600);
+              }, 6000);
+            }, 5000);
+          }, 5500);
+        }, 1200);
+      }, 1200);
     } catch (e) {
       rep.textContent = 'REPORT\nERROR ' + (e && e.message);
     }

@@ -97,6 +97,17 @@ window.WEDDING_CONFIG = {
     "photos/photo6"
   ],
 
+  /* ---------- 婚礼节照片轮播 ----------
+     仪式场景图 + 照片自动循环播放（也可在编辑器「照片」tab 里调整）：
+       auto       是否自动轮播（false 时固定显示场景图）
+       intervalMs 每张停留时长（毫秒）
+       fadeMs     渐入渐出（crossfade）时长（毫秒） */
+  gallery: {
+    auto: true,
+    intervalMs: 4000,
+    fadeMs: 800
+  },
+
   /* ---------- 背景音乐 ----------
      src 留空 ""：播放内置的 8-bit 小曲（卡农，无需文件）
      想要自己的音乐：把 mp3 放进 assets/music/ 文件夹，

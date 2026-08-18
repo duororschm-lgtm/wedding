@@ -57,3 +57,21 @@ alter table public.rsvp add constraint rsvp_guest_count_check check (guest_count
 drop policy if exists "已登录也可提交回执" on public.rsvp;
 create policy "已登录也可提交回执" on public.rsvp
   for insert to authenticated with check (true);
+
+-- ============================================================
+-- ⑩ 宾客墙：公开读「出席」名单（安全函数，只回公开字段）
+-- ============================================================
+create or replace function public.rsvp_wall()
+returns table(id bigint, name text, guest_count int, created_at timestamptz)
+language sql
+security definer
+set search_path = public
+as $$
+  select id, name, guest_count, created_at
+  from public.rsvp
+  where attending = true
+  order by created_at asc
+  limit 60
+$$;
+
+grant execute on function public.rsvp_wall() to anon, authenticated;

@@ -205,3 +205,21 @@ grant execute on function public.visit_stats() to authenticated;
 drop policy if exists "管理员可看访问统计" on public.visits;
 create policy "管理员可看访问统计" on public.visits
   for select to authenticated using (true);
+
+-- ============================================================
+-- ⑨ 宾客墙：公开读「出席」名单（安全函数，只回公开字段）
+-- ============================================================
+create or replace function public.rsvp_wall()
+returns table(id bigint, name text, guest_count int, created_at timestamptz)
+language sql
+security definer
+set search_path = public
+as $$
+  select id, name, guest_count, created_at
+  from public.rsvp
+  where attending = true
+  order by created_at asc
+  limit 60
+$$;
+
+grant execute on function public.rsvp_wall() to anon, authenticated;

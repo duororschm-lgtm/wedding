@@ -10,7 +10,7 @@
   <meta property="og:title" content="我们的婚礼请柬">
   <meta property="og:description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
 
@@ -99,7 +99,14 @@
     <section class="section sec-orange sec-dirt" id="ceremony">
       <h2 class="sec-title"><span class="heart" data-heart></span>婚礼节<span class="heart" data-heart></span></h2>
       <div class="wood-frame ceremony-board reveal" id="ceremony-board">
-        <img id="ceremony-img" src="assets/bg/pix/ceremony.png" alt="婚礼仪式场景" loading="lazy">
+        <div class="slideshow" id="ceremony-slides" aria-label="婚礼仪式与照片轮播">
+          <img class="slide" id="ceremony-img" alt="婚礼仪式场景">
+          <img class="slide" alt="婚礼照片">
+        </div>
+        <div class="slideshow-dots" id="ceremony-dots" hidden></div>
+      </div>
+      <div class="view-toggle-row reveal" id="view-toggle-row">
+        <button class="btn btn-sm view-btn" id="gallery-view-btn" type="button">照片网格视图</button>
       </div>
       <div class="dialog-box reveal" id="dialog-box" role="button" tabindex="0" aria-label="点击继续">
         <div class="dialog-portrait" id="dialog-portrait"></div>
@@ -109,8 +116,8 @@
           <div class="dialog-next">▼</div>
         </div>
       </div>
-      <div class="mini-heading gallery-heading"><span class="mini-heading-icon" data-icon="heartSm"></span><span>我们的照片</span></div>
-      <div id="gallery-grid"></div>
+      <div class="mini-heading gallery-heading" hidden><span class="mini-heading-icon" data-icon="heartSm"></span><span>我们的照片</span></div>
+      <div id="gallery-grid" hidden></div>
     </section>
 
     <!-- 山谷地图 -->
@@ -208,7 +215,8 @@
         <p id="blessing-text">春风暖，遇良辰。<br>喝满你们的喜酒，听完一年的花。<br>把最好的故事，变成共同的回忆。</p>
       </div>
       <div class="inventory-row reveal" id="gift-row" aria-label="婚礼礼物栏"></div>
-      <div class="animal-grid reveal" id="animal-grid" aria-label="山谷动物席位墙"></div>
+      <div class="mini-heading"><span class="mini-heading-icon" data-icon="heartSm"></span><span>出席的宾客</span></div>
+      <div class="animal-grid reveal" id="animal-grid" aria-label="宾客墙"></div>
       <div class="harvest-row reveal" id="harvest-row" aria-hidden="true"></div>
     </section>
 
@@ -341,14 +349,22 @@
   </div>
 
   <!-- 灯箱 -->
-  <div id="lightbox" hidden><img id="lightbox-img" alt="照片大图"></div>
+  <div id="lightbox" hidden>
+    <div class="lb-stage">
+      <img id="lightbox-img" alt="照片大图">
+      <button class="lb-nav lb-prev" id="lb-prev" type="button" aria-label="上一张">‹</button>
+      <button class="lb-nav lb-next" id="lb-next" type="button" aria-label="下一张">›</button>
+      <button class="lb-close" id="lb-close" type="button" aria-label="关闭">✕</button>
+      <div class="lb-counter" id="lb-counter">1 / 1</div>
+    </div>
+  </div>
 
   <!-- 提示气泡 -->
   <div id="toast" hidden></div>
 
   <script src="assets/js/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="js/pixelart.js?v=4"></script>
-  <script src="js/main.js?v=4"></script>
+  <script src="js/pixelart.js?v=5"></script>
+  <script src="js/main.js?v=5"></script>
 </body>
 </html>

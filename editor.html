@@ -185,6 +185,20 @@
           <p class="editor-hint" id="photo-progress"></p>
           <p class="editor-hint">建议宽高比 4:3、单张 1MB 以内，上传后请柬即时显示。</p>
         </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">轮播设置</h2>
+          <div class="editor-switches">
+            <label class="editor-switch"><input type="checkbox" id="gal-auto" checked><span>自动轮播</span></label>
+          </div>
+          <div class="editor-grid">
+            <div class="field"><label for="gal-interval">每张停留（秒）</label>
+              <input type="number" id="gal-interval" min="1" max="60" step="1"></div>
+            <div class="field"><label for="gal-fade">渐变时长（毫秒）</label>
+              <input type="number" id="gal-fade" min="0" max="5000" step="100"></div>
+          </div>
+          <p class="editor-hint">轮播顺序：婚礼仪式场景图 → 我们的照片，循环播放。关闭自动轮播则固定显示场景图。修改不影响已上传照片。</p>
+          <button class="btn btn-primary btn-block editor-save" id="photos-save" type="button">保存轮播设置</button>
+        </div>
       </section>
 
       <!-- ③ 嘉宾 -->

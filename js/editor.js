@@ -413,12 +413,21 @@
 
   function loadPhotosTab() {
     readSettings().then(function (serverData) {
-      photosCache = mergePerLevel(C, serverData).photos || [];
+      var merged = mergePerLevel(C, serverData);
+      photosCache = merged.photos || [];
       renderPhotoGrid();
+      /* 轮播设置回填（老库没有 gallery 键时用 config.js 默认值） */
+      var g = merged.gallery || {};
+      $('#gal-auto').checked = g.auto !== false;
+      $('#gal-interval').value = Math.round((g.intervalMs || 4000) / 1000);
+      $('#gal-fade').value = g.fadeMs || 800;
     }).catch(function (e) {
       toast('读取配置失败：' + e.message + '（site_settings 表建好了吗？）');
       photosCache = (C.photos || []).slice();
       renderPhotoGrid();
+      $('#gal-auto').checked = true;
+      $('#gal-interval').value = 4;
+      $('#gal-fade').value = 800;
     });
   }
 
@@ -534,6 +543,31 @@
         renderPhotoGrid();
         toast('照片已上传，但保存列表失败：' + e.message);
       });
+    });
+  });
+
+  /* ---------- 轮播设置保存（只动 gallery 键，photos 数组不受影响） ---------- */
+  function collectGalleryForm() {
+    var s = parseInt($('#gal-interval').value, 10);
+    var f = parseInt($('#gal-fade').value, 10);
+    return {
+      gallery: {
+        auto: $('#gal-auto').checked,
+        intervalMs: (isNaN(s) ? 4 : Math.max(1, Math.min(60, s))) * 1000,
+        fadeMs: isNaN(f) ? 800 : Math.max(0, Math.min(5000, f))
+      }
+    };
+  }
+
+  $('#photos-save').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    saveSettingsData(collectGalleryForm()).then(function () {
+      toast('已保存，请柬即时生效');
+    }).catch(function (e) {
+      toast('保存失败：' + e.message);
+    }).then(function () {
+      btn.disabled = false;
     });
   });
 
