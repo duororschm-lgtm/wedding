@@ -243,23 +243,32 @@ window.WEDDING_CONFIG = {
    必须在 merge 之前调用：否则 config.js 的默认 banquets 会盖掉用户的旧数据。
    旧的单套行程/交通作为起点复制给两场（男方=主宴含坐标），用户再各自改。 */
 window.migrateLegacyBanquets = function (serverData) {
-  if (!serverData || serverData.banquets) return serverData;
-  if (!serverData.date && !serverData.venue && !serverData.schedule) return serverData;
+  if (!serverData) return serverData;
   var copy = function (v) { return JSON.parse(JSON.stringify(v || {})); };
-  var v = serverData.venue || {};
-  serverData.banquets = {
-    groom: {
-      date: copy(serverData.date), venue: copy(serverData.venue),
-      schedule: copy(serverData.schedule), transport: copy(serverData.transport),
-      countdown: false, calendar: false
-    },
-    bride: {
-      date: copy(serverData.date),
-      venue: { name: v.name || '', address: v.address || '', notice: v.notice || '' },
-      schedule: copy(serverData.schedule), transport: copy(serverData.transport),
-      countdown: false, calendar: false
-    }
-  };
+  if (!serverData.banquets && (serverData.date || serverData.venue || serverData.schedule)) {
+    var v = serverData.venue || {};
+    serverData.banquets = {
+      groom: {
+        date: copy(serverData.date), venue: copy(serverData.venue),
+        schedule: copy(serverData.schedule), transport: copy(serverData.transport),
+        countdown: false, calendar: false
+      },
+      bride: {
+        date: copy(serverData.date),
+        venue: { name: v.name || '', address: v.address || '', notice: v.notice || '' },
+        schedule: copy(serverData.schedule), transport: copy(serverData.transport),
+        countdown: false, calendar: false
+      }
+    };
+  }
+  /* 照片键迁移必须在 merge 之前：mergeDeep 只覆盖远端出现过的键——
+     远端婚宴没有 photos 键时，默认模板照会漏到线上；旧 photo 单键也会被吞掉 */
+  var bq = serverData.banquets || {};
+  [bq.groom, bq.bride].forEach(function (b) {
+    if (!b) return;
+    if (!Array.isArray(b.photos)) b.photos = (typeof b.photo === 'string' && b.photo) ? [b.photo] : [];
+    delete b.photo;
+  });
   return serverData;
 };
 
