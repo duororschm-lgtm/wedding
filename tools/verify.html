@@ -120,7 +120,7 @@
       out.push('slides0=' + snapSlides());
       out.push('wallEmpty=' + (d.querySelector('#animal-grid .wall-empty') ? 'yes' : 'no'));
       out.push('portraitCells=' + d.querySelectorAll('.portrait-cell').length);
-      out.push('giftCells=' + d.querySelectorAll('#gift-row .gift-cell').length);
+      out.push('giftRowGone=' + (d.getElementById('gift-row') ? 'NO' : 'yes'));
       var tt = d.getElementById('treasure-total');
       out.push('treasureHearts=' + d.querySelectorAll('.treasure-heart').length + '/' + (tt ? tt.textContent : '?'));
       out.push('photoCards=' + d.querySelectorAll('#gallery-grid .photo-card').length);

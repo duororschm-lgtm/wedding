@@ -58,22 +58,11 @@ window.WEDDING_CONFIG = {
     reward: "奖励：永久友谊 +1000　幸福值 MAX"
   },
 
-  /* ---------- 山谷友人（祝福信 + 动物席位墙） ---------- */
+  /* ---------- 山谷友人（祝福信 + 出席宾客头像墙） ----------
+     宾客头像池约 30 个（原礼物栏 16 格像素精灵 + assets/tpl/characters/ 村民肖像），
+     在 js/main.js 的 AVATAR_POOL 里按姓名哈希随机分配，无需在此配置 */
   guests: {
-    blessing: "春风暖，遇良辰。\n喝满你们的喜酒，听完一年的花。\n把最好的故事，变成共同的回忆。",
-    animals: [
-      { sprite: "chicken", name: "咕咕" },
-      { sprite: "cow", name: "哞哞" },
-      { sprite: "cat", name: "年年" },
-      { sprite: "dog", name: "旺旺" },
-      { sprite: "sheep", name: "团团" },
-      { sprite: "pig", name: "噜噜" },
-      { sprite: "rabbit", name: "蹦蹦" },
-      { sprite: "duck", name: "嘎嘎" },
-      { sprite: "fox", name: "阿赤" },
-      { sprite: "squirrel", name: "栗栗" },
-      { sprite: "owl", name: "夜夜" }
-    ]
+    blessing: "春风暖，遇良辰。\n喝满你们的喜酒，听完一年的花。\n把最好的故事，变成共同的回忆。"
   },
 
   /* ---------- 婚礼节场景大图 ----------

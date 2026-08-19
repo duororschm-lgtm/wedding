@@ -295,7 +295,7 @@
       $('#quest-reward').textContent = q.reward || '奖励：永久友谊 +1000　幸福值 MAX';
     }
 
-    /* ---------- 山谷友人：祝福信 + 礼物栏 + 动物席位墙 ---------- */
+    /* ---------- 山谷友人：祝福信 + 出席宾客头像墙 ---------- */
     function buildGuests() {
       var g = C.guests || {};
 
@@ -303,51 +303,37 @@
         $('#blessing-text').innerHTML = g.blessing.split('\n').join('<br>');
       }
 
-      /* 礼物栏（背包）：婚戒 + 丰收果实 + 山谷动物全家 */
-      var gifts = ['ring', 'strawberry', 'blueberry', 'carrot', 'pumpkin'];
-      var DEFAULT_ANIMALS = [
-        { sprite: 'chicken', name: '咕咕' },
-        { sprite: 'cow', name: '哞哞' },
-        { sprite: 'cat', name: '年年' },
-        { sprite: 'dog', name: '旺旺' },
-        { sprite: 'sheep', name: '团团' },
-        { sprite: 'pig', name: '噜噜' },
-        { sprite: 'rabbit', name: '蹦蹦' },
-        { sprite: 'duck', name: '嘎嘎' },
-        { sprite: 'fox', name: '阿赤' },
-        { sprite: 'squirrel', name: '栗栗' },
-        { sprite: 'owl', name: '夜夜' }
-      ];
-      var animals = (g.animals || []).slice();
-      if (animals.length < DEFAULT_ANIMALS.length) {
-        DEFAULT_ANIMALS.forEach(function (d) {
-          if (animals.length >= DEFAULT_ANIMALS.length) return;
-          var dup = animals.some(function (a) { return a.sprite === d.sprite; });
-          if (!dup) animals.push(d);
-        });
-      }
-
-      var row = $('#gift-row');
-      gifts.forEach(function (name) {
-        var cell = makeDiv('gift-cell');
-        cell.appendChild(PixelArt.sprite(name, 5));
-        row.appendChild(cell);
-      });
-      animals.forEach(function (a) {
-        var cell = makeDiv('gift-cell');
-        var spriteName = (a.sprite && PixelArt.SPRITES[a.sprite]) ? a.sprite : 'chicken';
-        cell.appendChild(PixelArt.sprite(spriteName, 5));
-        cell.title = a.name || '';
-        row.appendChild(cell);
-      });
-
-      /* 宾客墙：回执「出席」的宾客（像素头像 + 名字 + 同行人数） */
+      /* 宾客墙：回执「出席」的宾客（随机头像 + 名字 + 同行角标） */
       buildGuestWall();
     }
 
     /* ---------- 宾客墙：公开读出席名单（rsvp_wall RPC，安全函数） ---------- */
-    var WALL_SPRITES = ['groom', 'bride', 'chicken', 'cow', 'cat', 'dog', 'sheep',
-                        'pig', 'rabbit', 'duck', 'fox', 'squirrel', 'owl'];
+    /* 头像池（约 30 个）：原礼物栏 16 格像素精灵 + 旧版山谷村民肖像，
+       按宾客姓名哈希固定随机分配，刷新不变脸 */
+    var AVATAR_POOL = [
+      { svg: 'ring' }, { svg: 'strawberry' }, { svg: 'blueberry' }, { svg: 'carrot' }, { svg: 'pumpkin' },
+      { svg: 'chicken' }, { svg: 'cow' }, { svg: 'cat' }, { svg: 'dog' }, { svg: 'sheep' },
+      { svg: 'pig' }, { svg: 'rabbit' }, { svg: 'duck' }, { svg: 'fox' }, { svg: 'squirrel' }, { svg: 'owl' },
+      { img: 'assets/tpl/characters/abigail.png' }, { img: 'assets/tpl/characters/haley.png' },
+      { img: 'assets/tpl/characters/emily.png' }, { img: 'assets/tpl/characters/leah.png' },
+      { img: 'assets/tpl/characters/penny.png' }, { img: 'assets/tpl/characters/maru.png' },
+      { img: 'assets/tpl/characters/sam.png' }, { img: 'assets/tpl/characters/elliott.png' },
+      { img: 'assets/tpl/characters/harvey.png' }, { img: 'assets/tpl/characters/alex.png' },
+      { img: 'assets/tpl/characters/shane.png' }, { img: 'assets/tpl/characters/lewis.png' },
+      { img: 'assets/tpl/characters/couple-groom.png' }, { img: 'assets/tpl/characters/couple-bride.png' },
+      { img: 'assets/tpl/characters/mystery.png' }
+    ];
+
+    function guestAvatar(name) {
+      var a = AVATAR_POOL[hashStr(name) % AVATAR_POOL.length];
+      if (a.img) {
+        var im = document.createElement('img');
+        im.src = a.img;
+        im.alt = '';
+        return im;
+      }
+      return PixelArt.sprite(a.svg, 2);
+    }
 
     function buildGuestWall() {
       var grid = $('#animal-grid');
@@ -373,14 +359,14 @@
         r.data.forEach(function (row) {
           var cell = makeDiv('portrait-cell');
           var ic = makeDiv('portrait-icon');
-          ic.appendChild(PixelArt.sprite(WALL_SPRITES[hashStr(row.name) % WALL_SPRITES.length], 3));
+          ic.appendChild(guestAvatar(row.name));
           cell.appendChild(ic);
           var nm = makeDiv('animal-name');
           nm.textContent = row.name;
           cell.appendChild(nm);
           if ((row.guest_count || 1) > 1) {
             var c = makeDiv('guest-count');
-            c.textContent = '+' + (row.guest_count - 1) + ' 人同行';
+            c.textContent = '+' + (row.guest_count - 1);
             cell.appendChild(c);
           }
           grid.appendChild(cell);

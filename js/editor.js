@@ -239,7 +239,6 @@
     $('#ed-quest-unlock').value = q.unlock || '';
     $('#ed-quest-reward').value = q.reward || '';
     $('#ed-blessing').value = gu.blessing || '';
-    $('#ed-animals').value = animalsToText(gu.animals);
     $('#ed-ceremony-img').value = ce.src || '';
   }
 
@@ -281,26 +280,6 @@
       var tx = i >= 0 ? t.slice(i + 1).trim() : t;
       if (!tx) return;
       out.push({ speaker: sp || '旁白', text: tx });
-    });
-    return out;
-  }
-
-  /* 肖像墙动物：数据库存 [{sprite, name}]，表单里是每行「精灵名|名字」 */
-  function animalsToText(arr) {
-    return (arr || []).map(function (a) {
-      return (a.sprite || '') + '|' + (a.name || '');
-    }).join('\n');
-  }
-  function textToAnimals(str) {
-    var out = [];
-    String(str || '').split('\n').forEach(function (line) {
-      var t = line.trim();
-      if (!t) return;
-      var i = t.indexOf('|');
-      var sp = i >= 0 ? t.slice(0, i).trim() : t;
-      var nm = i >= 0 ? t.slice(i + 1).trim() : '';
-      if (!sp) return;
-      out.push({ sprite: sp, name: nm || sp });
     });
     return out;
   }
@@ -351,8 +330,7 @@
         reward: $('#ed-quest-reward').value.trim()
       },
       guests: {
-        blessing: $('#ed-blessing').value.trim(),
-        animals: textToAnimals($('#ed-animals').value)
+        blessing: $('#ed-blessing').value.trim()
       },
       ceremony: { src: $('#ed-ceremony-img').value.trim() }
     };
