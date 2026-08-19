@@ -8,7 +8,7 @@
 <iframe id="f" style="width:360px;height:900px;border:0"></iframe>
 <pre id="report">REPORT\nPENDING</pre>
 <script>
-  var W = parseInt(location.search.match(/w=(\d+)/)[1], 10) || 360;
+  var W = parseInt((location.search.match(/w=(\d+)/) || [])[1], 10) || 360;
   document.getElementById('f').style.width = W + 'px';
   try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) {}
   var rep = document.getElementById('report');
@@ -18,6 +18,10 @@
 
   function run() {
     var out = [];
+    function flush(tag) {
+      out.push('@' + tag);
+      rep.textContent = 'REPORT\n' + out.join('\n');
+    }
     try {
       var w = f.contentWindow, d = f.contentDocument;
       var vw = w.innerWidth;
@@ -50,7 +54,89 @@
 
       var fox = d.querySelector('.notice-deco img');
       out.push('fox=' + (fox && fox.naturalWidth ? 'ok' : 'FAIL'));
-      out.push('flowers=' + d.querySelectorAll('#notice-flowers svg').length);
+      out.push('flowers=' + d.querySelectorAll('#notice-flowers svg').length + '/' + d.querySelectorAll('#b-flowers svg').length + '/' + d.querySelectorAll('#g-flowers svg').length);
+
+      /* ===== 模块结构：9 个 section 各出现一次，hero 固定最前 / footer 固定最后 ===== */
+      var secIds = Array.prototype.map.call(d.querySelectorAll('#invitation > section.section'), function (s) { return s.id; });
+      out.push('sections=' + secIds.join(','));
+      var EXPECT = ['quest', 'notice', 'notice-bride', 'notice-groom', 'ceremony', 'map', 'rsvp', 'guests', 'games'];
+      var cnt = {}, fixedOk = true;
+      secIds.forEach(function (id) { cnt[id] = (cnt[id] || 0) + 1; if (EXPECT.indexOf(id) < 0) fixedOk = false; });
+      EXPECT.forEach(function (id) { if (cnt[id] !== 1) fixedOk = false; });
+      var inv = d.getElementById('invitation');
+      fixedOk = fixedOk && inv.firstElementChild && inv.firstElementChild.id === 'hero';
+      fixedOk = fixedOk && inv.lastElementChild && inv.lastElementChild.tagName === 'FOOTER';
+      out.push('sectionsFixed=' + (fixedOk ? 'ok' : 'FAIL'));
+
+      /* ===== 统一介绍：旧地点行已删；倒计时运行、月历存在（默认开） ===== */
+      out.push('oldVenueGone=' + (d.getElementById('info-venue') ? 'NO' : 'yes'));
+      out.push('oldNoticeGone=' + (d.getElementById('info-notice') ? 'NO' : 'yes'));
+      var cd = d.getElementById('cd-days');
+      out.push('cdDays=' + (cd ? (/\d/.test(cd.textContent) ? cd.textContent : 'NOTNUM') : 'MISSING'));
+      out.push('introCal=' + (d.getElementById('wedding-cal') ? 'ok' : 'MISSING'));
+
+      /* ===== 女方 / 男方婚宴：时间地点有内容；倒计时行与月历默认移除 ===== */
+      var bd = (d.getElementById('b-info-date') || {}).textContent || '';
+      var gd = (d.getElementById('g-info-date') || {}).textContent || '';
+      var bv = (d.getElementById('b-info-venue') || {}).textContent || '';
+      var gv = (d.getElementById('g-info-venue') || {}).textContent || '';
+      out.push('bInfoFilled=' + (bd && gd && bv && gv ? 'ok' : 'EMPTY'));
+      out.push('bCdGone=' + (d.getElementById('b-cd-row') ? 'NO' : 'yes'));
+      out.push('gCdGone=' + (d.getElementById('g-cd-row') ? 'NO' : 'yes'));
+      out.push('bCalGone=' + (d.getElementById('b-wedding-cal') ? 'NO' : 'yes'));
+      out.push('gCalGone=' + (d.getElementById('g-wedding-cal') ? 'NO' : 'yes'));
+
+      /* ===== 每场婚宴的「完整婚礼信息」可展开块：默认收起，行程/交通有内容，点击可开合 ===== */
+      out.push('introScheduleGone=' + (d.getElementById('schedule-grid') || d.getElementById('schedule-heading') ? 'NO' : 'yes'));
+      var bBtn = d.getElementById('b-more-btn'), gBtn = d.getElementById('g-more-btn');
+      out.push('bMoreBtn=' + (bBtn ? (bBtn.textContent.indexOf('查看完整婚礼信息') >= 0 ? 'ok' : 'BADTEXT') : 'MISSING'));
+      out.push('gMoreBtn=' + (gBtn ? (gBtn.textContent.indexOf('查看完整婚礼信息') >= 0 ? 'ok' : 'BADTEXT') : 'MISSING'));
+      out.push('bMoreBody=' + (d.getElementById('b-more-body').hidden ? 'hidden' : 'OPEN'));
+      out.push('gMoreBody=' + (d.getElementById('g-more-body').hidden ? 'hidden' : 'OPEN'));
+      out.push('bSched=' + d.querySelectorAll('#b-schedule-grid .schedule-item').length);
+      out.push('gSched=' + d.querySelectorAll('#g-schedule-grid .schedule-item').length);
+      out.push('bTrans=' + ((d.getElementById('b-transport-public') || {}).textContent ? 'ok' : 'EMPTY'));
+      out.push('gTrans=' + ((d.getElementById('g-transport-car') || {}).textContent ? 'ok' : 'EMPTY'));
+      bBtn.click();
+      out.push('bOpen=' + (!d.getElementById('b-more-body').hidden && bBtn.getAttribute('aria-expanded') === 'true' && (bBtn.querySelector('.bm-arrow') || {}).textContent === '▲' ? 'ok' : 'FAIL'));
+      bBtn.click();
+      out.push('bClose=' + (d.getElementById('b-more-body').hidden && bBtn.getAttribute('aria-expanded') === 'false' && (bBtn.querySelector('.bm-arrow') || {}).textContent === '▼' ? 'ok' : 'FAIL'));
+      gBtn.click();
+      out.push('gOpen=' + (!d.getElementById('g-more-body').hidden && gBtn.getAttribute('aria-expanded') === 'true' ? 'ok' : 'FAIL'));
+
+      /* ===== 婚宴模块：顶部相册（默认 1 张 → 单张静态无圆点）+ 三红底按钮等分一行 ===== */
+      ['b', 'g'].forEach(function (p) {
+        var imgs = d.querySelectorAll('#' + p + '-album-swipe img');
+        var ok = imgs.length > 0;
+        Array.prototype.forEach.call(imgs, function (im) {
+          if (!im.complete || im.naturalWidth === 0) ok = false;
+        });
+        out.push(p + 'Album=' + (ok ? 'ok:' + imgs.length : 'FAIL:' + imgs.length));
+        out.push(p + 'AlbumDots=' + d.querySelectorAll('#' + p + '-album-dots .album-dot').length);
+      });
+      var bNav = d.getElementById('b-map-btn'), gNav = d.getElementById('g-map-btn');
+      out.push('bNav=' + (bNav && bNav.href.indexOf('uri.amap.com') >= 0 && bNav.textContent.indexOf('打开地图导航') >= 0 ? 'ok' : 'FAIL'));
+      out.push('gNav=' + (gNav && gNav.href.indexOf('uri.amap.com') >= 0 && gNav.textContent.indexOf('打开地图导航') >= 0 ? 'ok' : 'FAIL'));
+      out.push('actionRows=' + d.querySelectorAll('.action-row').length);
+      out.push('actionPixels=' + d.querySelectorAll('.action-row .pixel-button').length);
+      out.push('actionCards=' + d.querySelectorAll('.action-row .card-btn').length);
+      (function () {
+        var row = d.querySelector('.action-row');
+        if (!row) { out.push('actionRowLine=MISSING'); return; }
+        var btns = Array.prototype.slice.call(row.querySelectorAll('.pixel-button'));
+        if (btns.length < 2) { out.push('actionRowLine=tooFew'); return; }
+        var tops = btns.map(function (el) { return el.getBoundingClientRect().top; });
+        var spread = Math.max.apply(null, tops) - Math.min.apply(null, tops);
+        out.push('actionRowLine=' + (spread < 2 ? 'one' : 'wrap'));
+      })();
+      /* 行程左右对齐：环节左 + 时间右同一行（justify-content: space-between） */
+      var sh = d.querySelector('.schedule-head');
+      out.push('schedHead=' + (sh ? (w.getComputedStyle(sh).justifyContent || 'none') : 'MISSING'));
+      out.push('schedRowShape=' + (sh && sh.querySelector('b') && sh.querySelector('small') ? 'ok' : 'BAD'));
+
+      /* ===== 回执：住宿字段默认显示 ===== */
+      var accF = d.getElementById('rsvp-accommodation-field');
+      out.push('accField=' + (accF ? (accF.classList.contains('hidden') ? 'hidden' : 'visible') : 'MISSING'));
 
       var st = d.querySelector('.sec-title');
       if (st) {
@@ -69,31 +155,54 @@
       if (pc) out.push('firstPhoto=' + pc.src.split('/').pop() + (pc.naturalWidth ? ':ok' : ':FAIL'));
       else out.push('firstPhoto=missing-card');
 
-      var lc = d.querySelector('#map .location-card');
-      out.push('locationCard=' + (lc ? 'ok' : 'FAIL'));
-      if (lc) {
-        var imgs = lc.querySelectorAll('img');
-        var miss2 = [];
-        Array.prototype.forEach.call(imgs, function (im) {
-          if (!im.complete || im.naturalWidth === 0) miss2.push(im.src.split('/').pop());
-        });
-        out.push('transportImgs=' + imgs.length + ':' + (miss2.length ? 'FAIL ' + miss2.join(',') : 'ok'));
-        out.push('overline=' + (lc.querySelector('.location-overline') || {}).textContent);
-        out.push('venue=' + (lc.querySelector('#map-venue') || {}).textContent);
-        out.push('publicText=' + (lc.querySelector('#transport-public') || {}).textContent);
-        out.push('carText=' + (lc.querySelector('#transport-car-text') || {}).textContent);
-        var mb = lc.querySelector('#map-btn');
-        out.push('mapBtn=' + (mb ? mb.textContent + ':' + (mb.classList.contains('pixel-button') ? 'pixel' : 'NOPIXEL') + ':' + (mb.href.indexOf('uri.amap.com') >= 0 ? 'amap' : 'NOAMAP') : 'FAIL'));
-        out.push('copyBtn=' + ((lc.querySelector('#copy-addr-btn') || {}).textContent || 'FAIL'));
-        out.push('icsBtn=' + ((lc.querySelector('#ics-btn') || {}).textContent || 'FAIL'));
-      }
+      /* ===== 山谷地图：女方/男方两场地左右滑动，各一张卡（照片+场地名+交通+三按钮） ===== */
+      var slides = d.querySelectorAll('#map .map-slide');
+      out.push('mapSlides=' + slides.length);
+      var slideFails = [];
+      ['b', 'g'].forEach(function (p) {
+        var card = d.querySelector('#map-slide-' + p + ' .location-card');
+        var photo = d.getElementById(p + '-map-photo-img');
+        var photoOk = photo && photo.complete && photo.naturalWidth > 0;
+        var venue = (d.getElementById(p + '-map-venue') || {}).textContent || '';
+        var pub = (d.getElementById(p + '-map-transport-public') || {}).textContent || '';
+        var car = (d.getElementById(p + '-map-transport-car') || {}).textContent || '';
+        var nav = d.getElementById(p + '-map-nav');
+        var navOk = nav && nav.href.indexOf('uri.amap.com') >= 0 && nav.classList.contains('pixel-button');
+        var copyEl = d.getElementById(p + '-map-copy');
+        var icsEl = d.getElementById(p + '-map-ics');
+        var copy = (copyEl || {}).textContent || '';
+        var ics = (icsEl || {}).textContent || '';
+        var miss = [];
+        if (!card) miss.push('card');
+        if (!photoOk) miss.push('photo');
+        if (!venue) miss.push('venue');
+        if (!pub) miss.push('pub');
+        if (!car) miss.push('car');
+        if (!navOk) miss.push('nav');
+        if (copy.indexOf('复制地址') < 0 || !copyEl.classList.contains('pixel-button')) miss.push('copy');
+        if (ics.indexOf('添加到日历') < 0 || !icsEl.classList.contains('pixel-button')) miss.push('ics');
+        if (miss.length) slideFails.push(p + ':' + miss.join('/'));
+      });
+      out.push('mapSlidesOk=' + (slideFails.length ? 'FAIL ' + slideFails.join(' ') : 'ok'));
+      out.push('mapOverline=' + ((d.querySelector('#map .location-overline') || {}).textContent || 'MISSING'));
+      var swipe = d.getElementById('map-swipe');
+      out.push('mapSwipe=' + (swipe && swipe.scrollWidth > swipe.clientWidth ? 'scrollable' : 'NOTSCROLLABLE'));
+      out.push('mapDots=' + d.querySelectorAll('#map .map-dot').length + ':' + (d.querySelector('#map .map-dot.active') ? 'active' : 'NOACTIVE'));
+      out.push('mapTabs=' + d.querySelectorAll('#map .map-tab').length);
+      out.push('mapArrows=' + d.querySelectorAll('#map .map-arrow').length);
+      out.push('mapTab0Active=' + (d.getElementById('map-tab-b') && d.getElementById('map-tab-b').classList.contains('active') ? 'yes' : 'NO'));
+      out.push('arrowLDisabled=' + (d.getElementById('map-arrow-l') && d.getElementById('map-arrow-l').disabled ? 'yes' : 'NO'));
+      out.push('arrowRDisabled=' + (d.getElementById('map-arrow-r') && d.getElementById('map-arrow-r').disabled ? 'yes' : 'NO'));
 
+      var lc = d.querySelector('#map .location-card');
       if (lc) {
         d.body.classList.add('night');
         var ncs = w.getComputedStyle(lc);
         var ncell = w.getComputedStyle(lc.querySelector('.transport-cell'));
         out.push('nightCard=' + ncs.backgroundColor + '/' + ncs.borderColor);
         out.push('nightCell=' + ncell.backgroundColor + '/' + ncell.borderColor);
+      } else {
+        out.push('nightCard=FAIL');
       }
 
       var wide = [];
@@ -130,14 +239,44 @@
       var board = d.getElementById('ceremony-board');
       var sec = d.getElementById('ceremony');
       try { board.scrollIntoView({ block: 'center' }); } catch (e) { w.scrollTo(0, 10000); }
+      flush('sync-done');
       setTimeout(function () {
+        flush('stage-1');
         out.push('boardTop=' + (board.getBoundingClientRect().top | 0));
         var paused = sec.classList.contains('animations-paused');
         out.push('pausedClass=' + paused);
+        /* 地图切换三通道：spy 验证选项卡/箭头点击确实调用了滑动函数；
+           无头浏览器不播放平滑滚动动画、原生 scroll 事件派发不可靠，故直接落位后
+           手动派发 scroll 事件，走真实监听器驱动同步逻辑（同步立即断言） */
+        out.push('hook=' + typeof w.__mapGoTo);
+        var called = null;
+        w.__mapGoTo = function (i) { called = i; };
+        d.getElementById('map-tab-g').click();
+        out.push('tabClick=' + (called === 1 ? 'ok' : 'NO:' + called));
+        swipe.scrollLeft = swipe.clientWidth;
+        swipe.dispatchEvent(new w.Event('scroll'));
+        (function () {
+          var dots = d.querySelectorAll('#map .map-dot');
+          var ok = dots[1] && dots[1].classList.contains('active') &&
+            d.getElementById('map-tab-g').classList.contains('active') &&
+            d.getElementById('map-arrow-r').disabled === true &&
+            d.getElementById('map-arrow-l').disabled === false;
+          out.push('mapTabSwitch=' + (ok ? 'ok' : 'FAIL'));
+          w.__mapGoTo = function (i) { called = i; };
+          d.getElementById('map-arrow-l').click();
+          out.push('arrowClick=' + (called === 0 ? 'ok' : 'NO:' + called));
+          swipe.scrollLeft = 0;
+          swipe.dispatchEvent(new w.Event('scroll'));
+          var back = dots[0] && dots[0].classList.contains('active') &&
+            d.getElementById('map-tab-b').classList.contains('active') &&
+            d.getElementById('map-arrow-l').disabled === true;
+          out.push('mapArrowBack=' + (back ? 'ok' : 'FAIL'));
+        })();
         /* 无头虚拟时间下 IO 不重算，手动模拟 on-intersect 回调 */
         if (paused) { sec.classList.remove('animations-paused'); out.push('pausedCleared=manual'); }
         setTimeout(function () {
           var a = snapSlides();
+          flush('stage-2');
           setTimeout(function () {
             var b = snapSlides();
             out.push('slidesAdvance=' + (a !== b ? 'moved(' + a.split('|')[1] + '->' + b.split('|')[1] + ')' : 'STUCK'));
@@ -150,6 +289,7 @@
               sec.classList.remove('animations-paused');
               setTimeout(function () {
                 var p3 = snapSlides();
+                flush('stage-3');
                 out.push('pauseResume=' + (p2 !== p3 ? 'moved(ok)' : 'STUCK(FAIL)'));
                 /* 展开照片（默认收起）：点按钮 → 网格显示 + 成就解锁 */
                 d.getElementById('gallery-toggle-btn').click();
@@ -166,6 +306,7 @@
                 /* 等错峰 .visible 补完，卡片必须真实可见 */
                 setTimeout(function () {
                   var card0 = d.querySelector('#gallery-grid .photo-card');
+                  flush('stage-4');
                   out.push('cardVisible=' + (card0.classList.contains('visible') ? 'yes' : 'NO'));
                   out.push('cardOpacity=' + (w.getComputedStyle(card0).opacity | 0));
                   /* 收起 → 再展开：状态来回正常 */
@@ -176,15 +317,18 @@
                   /* 灯箱：点第一张 → 翻页 → 关闭 */
                   card0.click();
                   setTimeout(function () {
+                    flush('stage-5');
                     out.push('lb_open=' + !d.getElementById('lightbox').hidden);
                     out.push('lb_counter=' + d.getElementById('lb-counter').textContent);
                     d.getElementById('lb-next').click();
                     out.push('lb_next=' + d.getElementById('lb-counter').textContent);
                     d.getElementById('lb-close').click();
+                    /* 先落盘一次（预算被截断时也保证有完整 REPORT），450ms > 关闭过渡 250ms */
+                    rep.textContent = 'REPORT\n' + out.join('\n');
                     setTimeout(function () {
                       out.push('lb_closed=' + d.getElementById('lightbox').hidden);
                       rep.textContent = 'REPORT\n' + out.join('\n');
-                    }, 600);
+                    }, 450);
                   }, 600);
                 }, 1800);
               }, 6000);

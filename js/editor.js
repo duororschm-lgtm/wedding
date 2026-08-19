@@ -165,7 +165,7 @@
   });
 
   /* ---------- tab 切换 ---------- */
-  var TAB_IDS = ['content', 'photos', 'guests', 'games', 'board'];
+  var TAB_IDS = ['content', 'photos', 'guests', 'games', 'modules', 'board'];
   function activateTab(id) {
     $all('.editor-tabs .tab').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-tab') === id);
@@ -177,6 +177,7 @@
     else if (id === 'photos') loadPhotosTab();
     else if (id === 'guests') loadGuestsTab();
     else if (id === 'games') loadGamesTab();
+    else if (id === 'modules') loadModulesTab();
     else if (id === 'board') loadBoardTab();
   }
   $all('.editor-tabs .tab').forEach(function (btn) {
@@ -194,20 +195,34 @@
     if (contentLoaded) return;
     contentLoaded = true;
     readSettings().then(function (serverData) {
-      fillContentForm(mergePerLevel(C, serverData));
+      /* 旧数据迁移（merge 前）+ 结构补全（merge 后），与请柬页同一套逻辑 */
+      var merged = mergePerLevel(C, window.migrateLegacyBanquets(serverData || {}));
+      fillContentForm(window.normalizeWeddingConfig(merged));
     }).catch(function (e) {
       toast('读取配置失败：' + e.message + '（site_settings 表建好了吗？）');
-      fillContentForm(C);
+      fillContentForm(window.normalizeWeddingConfig(C));
     });
+  }
+
+  /* 日期表单：b = 女方婚宴，g = 男方婚宴 */
+  function fillDate(prefix, d) {
+    $('#ed-' + prefix + '-year').value = d.year == null ? '' : d.year;
+    $('#ed-' + prefix + '-month').value = d.month == null ? '' : d.month;
+    $('#ed-' + prefix + '-day').value = d.day == null ? '' : d.day;
+    $('#ed-' + prefix + '-hour').value = d.hour == null ? '' : d.hour;
+    $('#ed-' + prefix + '-minute').value = d.minute == null ? '' : d.minute;
+    $('#ed-' + prefix + '-lunar').value = d.lunar || '';
   }
 
   function fillContentForm(data) {
     var c = data.couple || {};
-    var d = data.date || {};
-    var v = data.venue || {};
+    var b = data.banquets || {};
+    var bg = b.groom || {};
+    var bb = b.bride || {};
+    var intro = data.intro || {};
+    var rsvp = data.rsvp || {};
     var s = data.share || {};
     var m = data.music || {};
-    var tr = data.transport || {};
     var q = data.quest || {};
     var gu = data.guests || {};
     var ce = data.ceremony || {};
@@ -215,20 +230,41 @@
     $('#ed-bride').value = c.bride || '';
     $('#ed-groom-nick').value = c.groomNick || '';
     $('#ed-bride-nick').value = c.brideNick || '';
-    $('#ed-year').value = d.year == null ? '' : d.year;
-    $('#ed-month').value = d.month == null ? '' : d.month;
-    $('#ed-day').value = d.day == null ? '' : d.day;
-    $('#ed-hour').value = d.hour == null ? '' : d.hour;
-    $('#ed-minute').value = d.minute == null ? '' : d.minute;
-    $('#ed-lunar').value = d.lunar || '';
-    $('#ed-venue-name').value = v.name || '';
-    $('#ed-venue-address').value = v.address || '';
-    $('#ed-lng').value = v.lng == null ? '' : v.lng;
-    $('#ed-lat').value = v.lat == null ? '' : v.lat;
-    $('#ed-venue-notice').value = v.notice || '';
-    $('#ed-schedule').value = scheduleToText(data.schedule);
-    $('#ed-transport-public').value = tr.public || '';
-    $('#ed-transport-car').value = tr.car || '';
+    /* 统一介绍：倒计时/月历（默认开）；行程归各婚宴自己配 */
+    $('#ed-i-countdown').checked = intro.countdown !== false;
+    $('#ed-i-calendar').checked = intro.calendar !== false;
+    /* 女方婚宴 */
+    fillDate('b', bb.date || {});
+    $('#ed-b-venue-name').value = (bb.venue && bb.venue.name) || '';
+    $('#ed-b-venue-address').value = (bb.venue && bb.venue.address) || '';
+    $('#ed-b-lng').value = bb.venue && bb.venue.lng != null ? bb.venue.lng : '';
+    $('#ed-b-lat').value = bb.venue && bb.venue.lat != null ? bb.venue.lat : '';
+    $('#ed-b-venue-notice').value = (bb.venue && bb.venue.notice) || '';
+    $('#ed-b-map-photo').value = (bb.venue && bb.venue.photo) || '';
+    renderSchedRows('b', bb.schedule);
+    $('#ed-b-transport-public').value = (bb.transport && bb.transport.public) || '';
+    $('#ed-b-transport-car').value = (bb.transport && bb.transport.car) || '';
+    $('#ed-b-info-on').checked = !bb.info || bb.info.on !== false;
+    $('#ed-b-info-expanded').checked = !!(bb.info && bb.info.expanded);
+    $('#ed-b-countdown').checked = bb.countdown === true;
+    $('#ed-b-calendar').checked = bb.calendar === true;
+    /* 男方婚宴（驱动封面日期与山谷地图） */
+    fillDate('g', bg.date || {});
+    $('#ed-g-venue-name').value = (bg.venue && bg.venue.name) || '';
+    $('#ed-g-venue-address').value = (bg.venue && bg.venue.address) || '';
+    $('#ed-g-lng').value = bg.venue && bg.venue.lng != null ? bg.venue.lng : '';
+    $('#ed-g-lat').value = bg.venue && bg.venue.lat != null ? bg.venue.lat : '';
+    $('#ed-g-venue-notice').value = (bg.venue && bg.venue.notice) || '';
+    $('#ed-g-map-photo').value = (bg.venue && bg.venue.photo) || '';
+    renderSchedRows('g', bg.schedule);
+    $('#ed-g-transport-public').value = (bg.transport && bg.transport.public) || '';
+    $('#ed-g-transport-car').value = (bg.transport && bg.transport.car) || '';
+    $('#ed-g-info-on').checked = !bg.info || bg.info.on !== false;
+    $('#ed-g-info-expanded').checked = !!(bg.info && bg.info.expanded);
+    $('#ed-g-countdown').checked = bg.countdown === true;
+    $('#ed-g-calendar').checked = bg.calendar === true;
+    /* 回执住宿开关 */
+    $('#ed-acc-on').checked = rsvp.accommodation !== false;
     $('#ed-share-title').value = s.title || '';
     $('#ed-share-desc').value = s.desc || '';
     $('#ed-music').value = m.src || '';
@@ -242,26 +278,56 @@
     $('#ed-ceremony-img').value = ce.src || '';
   }
 
-  /* 行程：数据库存 [{time, label, desc}]，表单里是每行「时间|环节|说明」 */
-  function scheduleToText(arr) {
-    return (arr || []).map(function (s) {
-      return (s.time || '') + '|' + (s.label || '') + '|' + (s.desc || '');
-    }).join('\n');
+  /* 行程：动态行（时间/环节/说明 三输入框 + 删除按钮），三栏全空的行保存时丢弃 */
+  function schedRowDom(s) {
+    s = s || {};
+    var row = document.createElement('div');
+    row.className = 'sched-row';
+    [['sched-time', 'time', '时间', 10],
+     ['sched-label', 'label', '环节', 20],
+     ['sched-desc', 'desc', '说明', 40]].forEach(function (t) {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = t[0];
+      input.maxLength = t[3];
+      input.placeholder = t[2];
+      input.value = s[t[1]] || '';
+      row.appendChild(input);
+    });
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'btn-del';
+    del.textContent = '✕';
+    del.title = '删除这一行';
+    del.setAttribute('aria-label', '删除流程');
+    del.addEventListener('click', function () { row.remove(); });
+    row.appendChild(del);
+    return row;
   }
-  function textToSchedule(str) {
+  function renderSchedRows(prefix, arr) {
+    var box = $('#' + prefix + '-sched-rows');
+    box.innerHTML = '';
+    var list = (arr && arr.length) ? arr : [{}];
+    list.forEach(function (s) { box.appendChild(schedRowDom(s)); });
+  }
+  function collectSched(prefix) {
     var out = [];
-    String(str || '').split('\n').forEach(function (line) {
-      var t = line.trim();
-      if (!t) return;
-      var parts = t.split('|');
-      var time = (parts[0] || '').trim();
-      var label = (parts[1] || '').trim();
-      var desc = (parts[2] || '').trim();
-      if (!label && !desc) return;
+    $all('#' + prefix + '-sched-rows .sched-row').forEach(function (row) {
+      var time = row.querySelector('.sched-time').value.trim();
+      var label = row.querySelector('.sched-label').value.trim();
+      var desc = row.querySelector('.sched-desc').value.trim();
+      if (!time && !label && !desc) return;
       out.push({ time: time, label: label, desc: desc });
     });
     return out;
   }
+  /* 「＋ 添加流程」：两场婚宴各一组 */
+  $('#b-sched-add').addEventListener('click', function () {
+    $('#b-sched-rows').appendChild(schedRowDom({}));
+  });
+  $('#g-sched-add').addEventListener('click', function () {
+    $('#g-sched-rows').appendChild(schedRowDom({}));
+  });
 
   /* 故事：数据库存 [{speaker, text}]，表单里是每行「发言者|内容」（发言者留空 = 旁白） */
   function storyToText(arr) {
@@ -288,7 +354,32 @@
     var v = parseFloat($(id).value);
     return isNaN(v) ? 0 : v;
   }
+  function cb(id) { return $(id).checked; }
+  function collectDate(prefix) {
+    return {
+      year: numVal('#ed-' + prefix + '-year'),
+      month: numVal('#ed-' + prefix + '-month'),
+      day: numVal('#ed-' + prefix + '-day'),
+      hour: numVal('#ed-' + prefix + '-hour'),
+      minute: numVal('#ed-' + prefix + '-minute'),
+      lunar: $('#ed-' + prefix + '-lunar').value.trim()
+    };
+  }
   function collectContentForm() {
+    var groomDate = collectDate('g');
+    var groomVenue = {
+      name: $('#ed-g-venue-name').value.trim(),
+      address: $('#ed-g-venue-address').value.trim(),
+      lng: numVal('#ed-g-lng'),
+      lat: numVal('#ed-g-lat'),
+      notice: $('#ed-g-venue-notice').value.trim(),
+      photo: $('#ed-g-map-photo').value.trim()
+    };
+    var groomSchedule = collectSched('g');
+    var groomTransport = {
+      public: $('#ed-g-transport-public').value.trim(),
+      car: $('#ed-g-transport-car').value.trim()
+    };
     return {
       couple: {
         groom: $('#ed-groom').value.trim(),
@@ -296,26 +387,41 @@
         groomNick: $('#ed-groom-nick').value.trim(),
         brideNick: $('#ed-bride-nick').value.trim()
       },
-      date: {
-        year: numVal('#ed-year'),
-        month: numVal('#ed-month'),
-        day: numVal('#ed-day'),
-        hour: numVal('#ed-hour'),
-        minute: numVal('#ed-minute'),
-        lunar: $('#ed-lunar').value.trim()
+      banquets: {
+        groom: {
+          date: groomDate,
+          venue: groomVenue,
+          schedule: groomSchedule,
+          transport: groomTransport,
+          info: { on: cb('#ed-g-info-on'), expanded: cb('#ed-g-info-expanded') },
+          countdown: cb('#ed-g-countdown'),
+          calendar: cb('#ed-g-calendar')
+        },
+        bride: {
+          date: collectDate('b'),
+          venue: {
+            name: $('#ed-b-venue-name').value.trim(),
+            address: $('#ed-b-venue-address').value.trim(),
+            lng: numVal('#ed-b-lng'),
+            lat: numVal('#ed-b-lat'),
+            notice: $('#ed-b-venue-notice').value.trim(),
+            photo: $('#ed-b-map-photo').value.trim()
+          },
+          schedule: collectSched('b'),
+          transport: {
+            public: $('#ed-b-transport-public').value.trim(),
+            car: $('#ed-b-transport-car').value.trim()
+          },
+          info: { on: cb('#ed-b-info-on'), expanded: cb('#ed-b-info-expanded') },
+          countdown: cb('#ed-b-countdown'),
+          calendar: cb('#ed-b-calendar')
+        }
       },
-      venue: {
-        name: $('#ed-venue-name').value.trim(),
-        address: $('#ed-venue-address').value.trim(),
-        lng: numVal('#ed-lng'),
-        lat: numVal('#ed-lat'),
-        notice: $('#ed-venue-notice').value.trim()
+      intro: {
+        countdown: cb('#ed-i-countdown'),
+        calendar: cb('#ed-i-calendar')
       },
-      schedule: textToSchedule($('#ed-schedule').value),
-      transport: {
-        public: $('#ed-transport-public').value.trim(),
-        car: $('#ed-transport-car').value.trim()
-      },
+      rsvp: { accommodation: cb('#ed-acc-on') },
       story: textToStory($('#ed-story').value),
       share: {
         title: $('#ed-share-title').value.trim(),
@@ -332,7 +438,12 @@
       guests: {
         blessing: $('#ed-blessing').value.trim()
       },
-      ceremony: { src: $('#ed-ceremony-img').value.trim() }
+      ceremony: { src: $('#ed-ceremony-img').value.trim() },
+      /* 顶层镜像：date/venue/schedule/transport 始终 = 男方主宴副本，防止旧键脏值下次读取时回流 */
+      date: JSON.parse(JSON.stringify(groomDate)),
+      venue: JSON.parse(JSON.stringify(groomVenue)),
+      schedule: JSON.parse(JSON.stringify(groomSchedule)),
+      transport: JSON.parse(JSON.stringify(groomTransport))
     };
   }
 
@@ -383,19 +494,60 @@
     });
   });
 
+  /* ---------- 山谷地图实景照片上传（storage 桶 photos，path map/…，不进照片墙列表） ---------- */
+  function bindMapPhotoUpload(btnId, fileId, inputId) {
+    var busy = false;
+    $(btnId).addEventListener('click', function () { $(fileId).click(); });
+    $(fileId).addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      this.value = '';
+      if (!file || busy) return;
+      busy = true;
+      var btn = $(btnId);
+      btn.disabled = true;
+      btn.textContent = '上传中…';
+      var path = 'map/' + Date.now() + '-' + cleanFileName(file.name);
+      supabase.storage.from('photos').upload(path, file, {
+        cacheControl: '3600',
+        contentType: file.type || 'image/jpeg'
+      }).then(function (r) {
+        if (r.error) throw new Error(r.error.message);
+        var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
+        $(inputId).value = url;
+        toast('照片已上传，记得点「保存」生效');
+      }).catch(function (e) {
+        toast('上传失败：' + e.message + '（photos 桶建好了吗？）');
+      }).then(function () {
+        busy = false;
+        btn.disabled = false;
+        btn.textContent = '上传实景照片';
+      });
+    });
+  }
+  bindMapPhotoUpload('#b-map-photo-upload', '#b-map-photo-file', '#ed-b-map-photo');
+  bindMapPhotoUpload('#g-map-photo-upload', '#g-map-photo-file', '#ed-g-map-photo');
+
   /* ============================================================
      ② 照片：网格管理 + 上传到 storage 桶 photos
      ============================================================ */
   var photosCache = [];
+  var albumPhotos = { b: [], g: [] };   /* 两场婚宴相册的照片 URL 数组（b=女方 g=男方） */
   var photoBusy = false;
 
   function loadPhotosTab() {
     readSettings().then(function (serverData) {
-      var merged = mergePerLevel(C, serverData);
-      photosCache = merged.photos || [];
+      /* normalize 后取两场婚宴的 photos 数组（旧单张 photo 键自动迁移进数组） */
+      var norm = window.normalizeWeddingConfig(mergePerLevel(C, window.migrateLegacyBanquets(serverData || {})));
+      photosCache = norm.photos || [];
       renderPhotoGrid();
+      albumPhotos = {
+        b: ((norm.banquets.bride || {}).photos || []).slice(),
+        g: ((norm.banquets.groom || {}).photos || []).slice()
+      };
+      renderAlbumGrid('b');
+      renderAlbumGrid('g');
       /* 轮播设置回填（老库没有 gallery 键时用 config.js 默认值） */
-      var g = merged.gallery || {};
+      var g = norm.gallery || {};
       $('#gal-auto').checked = g.auto !== false;
       $('#gal-interval').value = Math.round((g.intervalMs || 4000) / 1000);
       $('#gal-fade').value = g.fadeMs || 800;
@@ -403,6 +555,9 @@
       toast('读取配置失败：' + e.message + '（site_settings 表建好了吗？）');
       photosCache = (C.photos || []).slice();
       renderPhotoGrid();
+      albumPhotos = { b: [], g: [] };
+      renderAlbumGrid('b');
+      renderAlbumGrid('g');
       $('#gal-auto').checked = true;
       $('#gal-interval').value = 4;
       $('#gal-fade').value = 800;
@@ -523,6 +678,119 @@
       });
     });
   });
+
+  /* ---------- 婚宴相册照片（女方/男方两场各自的 photos 数组） ---------- */
+  function renderAlbumGrid(prefix) {
+    var grid = $('#' + prefix + '-album-grid');
+    var list = albumPhotos[prefix] || [];
+    grid.innerHTML = '';
+    $('#' + prefix + '-album-empty').classList.toggle('hidden', list.length > 0);
+    list.forEach(function (url, i) {
+      var item = document.createElement('div');
+      item.className = 'ph-item';
+      var img = document.createElement('img');
+      img.alt = '婚宴照片 ' + (i + 1);
+      img.src = url;
+      img.onerror = function () { this.style.opacity = '0.25'; };
+      var del = document.createElement('button');
+      del.className = 'ph-del';
+      del.textContent = '✕';
+      del.title = '删除这张照片';
+      del.setAttribute('aria-label', '删除照片');
+      del.addEventListener('click', function () { deleteAlbumPhoto(prefix, url, i); });
+      item.appendChild(img);
+      item.appendChild(del);
+      grid.appendChild(item);
+    });
+  }
+
+  function deleteAlbumPhoto(prefix, url, index) {
+    if (photoBusy) { toast('正在处理中，请稍等'); return; }
+    photoBusy = true;
+    var key = prefix === 'b' ? 'bride' : 'groom';
+    var path = photoPathFromUrl(url);
+    var removal = path
+      ? supabase.storage.from('photos').remove([path])
+      : Promise.resolve({ data: null, error: null });
+    Promise.resolve(removal).then(function (r) {
+      if (r && r.error) toast('存储文件删除失败：' + r.error.message + '，已从列表移除');
+      albumPhotos[prefix].splice(index, 1);
+      renderAlbumGrid(prefix);
+      var patch = { banquets: {} };
+      patch.banquets[key] = { photos: albumPhotos[prefix] };
+      return saveSettingsData(patch);
+    }).then(function () {
+      toast('照片已删除');
+    }).catch(function (e) {
+      toast('列表已更新，但保存失败：' + e.message);
+    }).then(function () {
+      photoBusy = false;
+    });
+  }
+
+  function uploadAlbumOne(file, i, prefix) {
+    var extMatch = String(file.name).match(/\.([a-zA-Z0-9]{2,5})$/);
+    var ext = extMatch ? extMatch[1].toLowerCase() : '';
+    var base = cleanFileName(file.name.replace(/\.[a-zA-Z0-9]{2,5}$/, ''));
+    var path = 'banquet/' + (prefix === 'b' ? 'bride' : 'groom') + '/' +
+      Date.now() + '-' + (i + 1) + '-' + base + (ext ? '.' + ext : '');
+    return supabase.storage.from('photos').upload(path, file, {
+      cacheControl: '3600',
+      contentType: file.type || 'image/jpeg'
+    }).then(function (r) {
+      if (r.error) return { ok: false, error: r.error.message };
+      var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
+      albumPhotos[prefix].push(url);
+      return { ok: true };
+    }).catch(function (e) {
+      return { ok: false, error: e && e.message ? e.message : '网络错误' };
+    });
+  }
+
+  function bindAlbumUpload(prefix) {
+    var key = prefix === 'b' ? 'bride' : 'groom';
+    $('#' + prefix + '-album-upload-btn').addEventListener('click', function () { $('#' + prefix + '-album-file').click(); });
+    $('#' + prefix + '-album-file').addEventListener('change', function () {
+      var files = Array.prototype.slice.call(this.files || []);
+      this.value = '';
+      if (!files.length) return;
+      if (photoBusy) { toast('正在处理中，请稍等'); return; }
+      photoBusy = true;
+      var btn = $('#' + prefix + '-album-upload-btn');
+      var prog = $('#' + prefix + '-album-progress');
+      btn.disabled = true;
+      var results = [];
+      var chain = Promise.resolve();
+      files.forEach(function (file, i) {
+        chain = chain.then(function () {
+          prog.textContent = '正在上传第 ' + (i + 1) + ' / ' + files.length + ' 张：' + file.name;
+          return uploadAlbumOne(file, i, prefix).then(function (res) { results.push(res); });
+        });
+      });
+      chain.then(function () {
+        btn.disabled = false;
+        photoBusy = false;
+        prog.textContent = '';
+        var okCount = results.filter(function (x) { return x.ok; }).length;
+        var failCount = results.length - okCount;
+        if (!okCount) {
+          toast('上传失败：' + (results[0] && results[0].error ? results[0].error : '未知错误') + '（photos 桶建好了吗？）');
+          return;
+        }
+        var patch = { banquets: {} };
+        patch.banquets[key] = { photos: albumPhotos[prefix] };
+        saveSettingsData(patch).then(function () {
+          renderAlbumGrid(prefix);
+          toast('上传完成：成功 ' + okCount + ' 张' + (failCount ? '，失败 ' + failCount + ' 张' : ''));
+        }).catch(function (e) {
+          renderAlbumGrid(prefix);
+          toast('照片已上传，但保存列表失败：' + e.message);
+        });
+      });
+    });
+  }
+  bindAlbumUpload('b');
+  bindAlbumUpload('g');
 
   /* ---------- 轮播设置保存（只动 gallery 键，photos 数组不受影响） ---------- */
   function collectGalleryForm() {
@@ -775,7 +1043,112 @@
   });
 
   /* ============================================================
-     ⑤ 看板：统计卡片、回执明细、未回复名单、导出 CSV
+     ⑤ 模块：请柬模块的显示开关 + 上下排序（封面/页脚固定不参与）
+     ============================================================ */
+  var MODULE_ORDER = [
+    { id: 'quest', label: '任务卡 · 参加我们的婚礼' },
+    { id: 'notice', label: '统一介绍 · 婚礼信息' },
+    { id: 'notice-bride', label: '女方婚宴' },
+    { id: 'notice-groom', label: '男方婚宴' },
+    { id: 'ceremony', label: '婚礼节' },
+    { id: 'map', label: '山谷地图' },
+    { id: 'rsvp', label: '出席回执' },
+    { id: 'guests', label: '山谷友人' },
+    { id: 'games', label: '游戏游园会' }
+  ];
+  var MODULE_BY_ID = {};
+  MODULE_ORDER.forEach(function (m) { MODULE_BY_ID[m.id] = m; });
+  var modulesList = [];
+
+  function loadModulesTab() {
+    readSettings().then(function (serverData) {
+      var merged = mergePerLevel(C, window.migrateLegacyBanquets(serverData || {}));
+      /* normalize 返回的 sections 只有 {id,on}，label 从 MODULE_ORDER 补上 */
+      modulesList = window.normalizeWeddingConfig(merged).sections.map(function (s) {
+        var meta = MODULE_BY_ID[s.id] || {};
+        return { id: s.id, on: s.on !== false, label: meta.label || s.id };
+      });
+      renderModules();
+    }).catch(function (e) {
+      toast('读取配置失败：' + e.message + '（site_settings 表建好了吗？）');
+      modulesList = MODULE_ORDER.map(function (m) { return { id: m.id, on: true, label: m.label }; });
+      renderModules();
+    });
+  }
+
+  function renderModules() {
+    var box = $('#ed-modules');
+    box.innerHTML = '';
+    modulesList.forEach(function (m, i) {
+      var row = document.createElement('div');
+      row.className = 'mod-row';
+
+      var up = document.createElement('button');
+      up.type = 'button';
+      up.className = 'btn mod-move';
+      up.textContent = '↑';
+      up.title = '上移';
+      up.disabled = i === 0;
+      up.addEventListener('click', function () {
+        var tmp = modulesList[i];
+        modulesList[i] = modulesList[i - 1];
+        modulesList[i - 1] = tmp;
+        renderModules();
+      });
+
+      var dn = document.createElement('button');
+      dn.type = 'button';
+      dn.className = 'btn mod-move';
+      dn.textContent = '↓';
+      dn.title = '下移';
+      dn.disabled = i === modulesList.length - 1;
+      dn.addEventListener('click', function () {
+        var tmp = modulesList[i];
+        modulesList[i] = modulesList[i + 1];
+        modulesList[i + 1] = tmp;
+        renderModules();
+      });
+
+      var lbl = document.createElement('label');
+      lbl.className = 'editor-switch mod-label';
+      var cbx = document.createElement('input');
+      cbx.type = 'checkbox';
+      cbx.checked = m.on !== false;
+      cbx.addEventListener('change', function () { m.on = cbx.checked; });
+      var span = document.createElement('span');
+      span.textContent = m.label;
+      lbl.appendChild(cbx);
+      lbl.appendChild(span);
+
+      row.appendChild(up);
+      row.appendChild(dn);
+      row.appendChild(lbl);
+      box.appendChild(row);
+    });
+  }
+
+  function collectModulesForm() {
+    return {
+      sections: modulesList.map(function (m) {
+        return { id: m.id, on: m.on !== false };
+      })
+    };
+  }
+
+  $('#modules-save').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    saveSettingsData(collectModulesForm()).then(function () {
+      toast('已保存，请柬即时生效');
+    }).catch(function (e) {
+      toast('保存失败：' + e.message + '（site_settings 表建好了吗？）');
+    }).then(function () {
+      btn.disabled = false;
+    });
+  });
+
+  /* ============================================================
+     ⑥ 看板：统计卡片、回执明细、未回复名单、导出 CSV
      ============================================================ */
   var rsvpCache = [];
   var guestsMap = {};

@@ -91,7 +91,7 @@ main { max-width: 560px; margin: 0 auto; }
 .section { padding: 64px 0 24px; }
 
 /* —— 邀请函区装饰：山谷邮差狐狸（右下）+ 花草（左下） —— */
-#notice { position: relative; padding-bottom: 104px; }
+#notice, #notice-bride, #notice-groom { position: relative; padding-bottom: 104px; }
 .notice-deco {
   position: absolute; right: 12px; bottom: 0; width: 96px; z-index: 1;
   pointer-events: none;
@@ -101,10 +101,10 @@ main { max-width: 560px; margin: 0 auto; }
   image-rendering: pixelated; transform: rotate(-4deg);
   filter: drop-shadow(3px 4px 0 rgba(74, 47, 29, 0.35));
 }
-#notice-flowers { position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 1; pointer-events: none; }
-#notice-flowers svg { position: absolute; }
+.notice-flowers { position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 1; pointer-events: none; }
+.notice-flowers svg { position: absolute; }
 body.night .notice-deco img { filter: drop-shadow(3px 4px 0 rgba(0, 0, 0, 0.45)) brightness(0.68) saturate(0.85); }
-body.night #notice-flowers svg { filter: brightness(0.75); }
+body.night .notice-flowers svg { filter: brightness(0.75); }
 
 /* 标题（模板式：英文眉题 + 中文大标题） */
 .sec-title {
@@ -127,7 +127,9 @@ body.night #notice-flowers svg { filter: brightness(0.75); }
   opacity: .8;
   text-shadow: none;
 }
-#notice .sec-title::before { content: 'THE WEDDING INVITATION'; }
+#notice .sec-title::before { content: 'WEDDING INFO'; }
+#notice-bride .sec-title::before { content: "THE BRIDE'S BANQUET"; }
+#notice-groom .sec-title::before { content: "THE GROOM'S BANQUET"; }
 .quest-title::before { content: 'A NEW QUEST'; }
 #ceremony .sec-title::before { content: 'THE CEREMONY'; }
 #map .sec-title::before { content: 'HOW TO ARRIVE'; }
@@ -589,7 +591,7 @@ body.night .lb-nav, body.night .lb-close { background: #26365e; color: #fff3d6; 
   border-color: #e6c66a var(--gold-dark) var(--gold-dark) #f4d06f;
   box-shadow: 0 5px 0 rgba(74, 47, 29, 0.45);
 }
-#info-notice[hidden] { display: none; }
+.info-notice[hidden] { display: none; }
 .info-notice-icon {
   flex: none;
   width: 48px; height: 48px;
@@ -646,7 +648,7 @@ body.night .lb-nav, body.night .lb-close { background: #26365e; color: #fff3d6; 
 }
 .schedule-grid { display: grid; gap: 10px; }
 .schedule-item {
-  display: flex; gap: 14px; align-items: center;
+  display: flex; gap: 14px; align-items: flex-start;
   background: var(--paper);
   border: var(--border);
   border-color: var(--ink) var(--wood-dark) var(--wood-dark) var(--wood);
@@ -662,10 +664,22 @@ body.night .lb-nav, body.night .lb-close { background: #26365e; color: #fff3d6; 
   border: 3px solid var(--red-dark);
   font-size: 16px;
 }
-.schedule-body { min-width: 0; }
-.schedule-body b { display: block; font-size: 16px; font-weight: 900; color: var(--red-dark); letter-spacing: .1em; }
-.schedule-body b small { display: block; margin-top: 2px; font-size: 11px; color: var(--ink-soft); letter-spacing: .06em; }
-.schedule-body p { font-size: 14px; line-height: 1.7; word-break: break-word; }
+.schedule-body { flex: 1; min-width: 0; }
+/* 左右对齐：环节名靠左、时间靠右同一行，说明独占下一行 */
+.schedule-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.schedule-body b { font-size: 16px; font-weight: 900; color: var(--red-dark); letter-spacing: .1em; }
+.schedule-body small {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: .06em;
+}
+.schedule-body p { margin-top: 4px; font-size: 14px; line-height: 1.7; word-break: break-word; }
 
 /* 交通指引：模板 location-card（样图2 样式） */
 .location-card {
@@ -706,6 +720,106 @@ body.night .lb-nav, body.night .lb-close { background: #26365e; color: #fff3d6; 
 .transport-cell b { font-size: 14px; font-weight: 900; letter-spacing: .1em; color: #7a4e2d; }
 .transport-text { font-size: 12px; line-height: 1.7; color: #7a4e2d; word-break: break-word; }
 
+/* 婚宴模块：可展开的「完整婚礼信息」块（默认收起，点击展开） */
+.banquet-more {
+  margin: 18px 0 0;
+  text-align: center;
+}
+.banquet-more-btn {
+  display: inline-block;
+  margin: 0 auto;
+  padding: 9px 16px;
+  border: 3px solid var(--ink);
+  background: var(--cream-2);
+  color: var(--ink);
+  box-shadow: 0 4px 0 rgba(74, 47, 29, 0.55);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+.banquet-more-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(74, 47, 29, 0.55);
+}
+.bm-arrow {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--red-dark);
+}
+.banquet-more-body {
+  margin-top: 16px;
+  border-top: 2px dashed rgba(122, 78, 45, 0.4);
+  padding-top: 2px;
+}
+.banquet-more-body .mini-heading { margin-top: 20px; }
+
+/* 婚宴模块顶部的相册（任意张照片：横滑 + 圆点 + 自动轮播，点开全屏；空数组整块移除） */
+.banquet-album { margin: 0 0 18px; }
+.album-swipe {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.album-swipe::-webkit-scrollbar { display: none; }
+.album-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: center;
+  background: var(--cream);
+  border: 4px solid var(--wood-dark);
+  box-shadow: 0 5px 0 rgba(74, 47, 29, 0.45);
+  cursor: zoom-in;
+}
+.album-slide.hidden { display: none; }
+.album-slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+body.night .album-slide { background: #2c315a; border-color: #6a8cc0; }
+.album-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0 0;
+}
+.album-dot {
+  width: 10px; height: 10px;
+  background: rgba(74, 47, 29, 0.28);
+  border: 2px solid var(--ink);
+  transition: background 0.2s ease;
+}
+.album-dot.active { background: var(--red); }
+body.night .album-dot { background: rgba(255, 255, 255, 0.2); border-color: #9db4e8; }
+body.night .album-dot.active { background: #ff9aac; }
+
+/* 按钮排：三枚红底像素按钮等分一行（婚宴信息块与山谷地图卡片共用） */
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.action-row .pixel-button {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 9px 4px;
+  border-width: 3px;
+  font-size: 11px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
 /* 红色像素导航按钮 + 卡片次要按钮 */
 .pixel-button {
   display: block;
@@ -728,30 +842,9 @@ body.night .lb-nav, body.night .lb-close { background: #26365e; color: #fff3d6; 
   transform: translate(2px, 3px);
   box-shadow: inset 0 0 0 2px #e77b78, 2px 2px #563247;
 }
-.card-btn {
-  display: block;
-  width: fit-content;
-  margin: 10px auto 0;
-  min-width: 128px;
-  padding: 8px 14px;
-  border: 2px solid #865035;
-  background: #fff0bd;
-  box-shadow: 0 3px 0 rgba(74, 47, 29, 0.35);
-  color: #7a4e2d;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: .07em;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.card-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(74, 47, 29, 0.35);
-}
 
 /* 倒计时 */
-#countdown {
+.countdown {
   display: flex;
   justify-content: center;
   gap: 4px;
@@ -1640,12 +1733,14 @@ body.night .location-venue { color: #ffd9dc; }
 body.night .transport-cell { background: #262b52; border-color: #6a8cc0; }
 body.night .transport-cell b,
 body.night .transport-text { color: #d9e2ff; }
-body.night .card-btn {
+body.night .banquet-more-btn {
   background: #262b52;
   border-color: #6a8cc0;
   color: #d9e2ff;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.55);
 }
+body.night .bm-arrow { color: #f0a3aa; }
+body.night .banquet-more-body { border-top-color: rgba(217, 226, 255, 0.3); }
 
 /* 回执与页脚：常驻夜色（与任务卡同族） */
 #rsvp {
@@ -1700,6 +1795,8 @@ body.night .wood-frame::before { border-color: rgba(255, 255, 255, 0.15); }
   pointer-events: none;
 }
 #notice.sec-dirt::after   { --zz: #8b5a2b; }
+#notice-bride.sec-dirt::after { --zz: #b2688a; }
+#notice-groom.sec-dirt::after { --zz: #8b5a2b; }
 #quest.sec-dirt::after    { --zz: #2a1b40; }
 #games.sec-dirt::after    { --zz: #8b5a2b; }
 #ceremony.sec-dirt::after { --zz: #b8742e; }
@@ -1796,37 +1893,97 @@ body.night .slideshow-dots .dot.active { background: #ff9aac; }
 .dialog-box { margin: 0 14px 24px; }
 .gallery-heading { margin-top: 8px; }
 
-/* —— 山谷地图 —— */
-.map-frame { margin: 0 14px 20px; background: var(--cream); }
-.map-frame img {
+/* —— 山谷地图：女方/男方两场地左右滑动 + 上方选项卡 + 左右箭头 —— */
+.map-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 0 14px 16px;
+}
+.map-tab {
+  flex: 1;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  padding: 10px 6px;
+  border: 4px solid #6e2f42;
+  background: var(--cream);
+  color: #7a4e2d;
+  box-shadow: 4px 5px #563247;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-tab:active { transform: translate(2px, 3px); box-shadow: 2px 2px #563247; }
+.map-tab.active {
+  background: #b94d60;
+  color: #fff5c9;
+  box-shadow: inset 0 0 0 2px #e77b78, 4px 5px #563247;
+}
+body.night .map-tab { background: #2c315a; border-color: #6a8cc0; color: #cdd9f5; }
+body.night .map-tab.active { background: #b94d60; border-color: #6e2f42; color: #fff5c9; }
+.map-swipe {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.map-swipe::-webkit-scrollbar { display: none; }
+.map-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: center;
+}
+.map-photo { margin: 0 14px 20px; background: var(--cream); }
+.map-photo img {
   display: block;
   width: 100%;
   height: auto;
-  image-rendering: pixelated;
 }
-.map-pin {
-  position: absolute;
-  left: 50%; top: 46%;
-  transform: translate(-50%, -100%);
-  z-index: 3;
+/* 底部控制行：左箭头 + 圆点 + 右箭头 */
+.map-controls {
   display: flex;
-  animation: bob 1.6s ease-in-out infinite;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 6px 0 10px;
 }
-.map-pin::after {
-  content: "";
-  position: absolute;
-  left: 50%; bottom: -4px;
-  width: 18px; height: 18px;
-  margin-left: -9px;
-  border: 3px solid var(--red);
-  border-radius: 50%;
-  animation: pin-ring 1.6s ease-out infinite;
+.map-arrow {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  border: 4px solid #6e2f42;
+  background: #b94d60;
+  color: #fff5c9;
+  box-shadow: inset 0 0 0 2px #e77b78, 3px 4px #563247;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-@keyframes pin-ring {
-  0% { transform: scale(0.4); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
+.map-arrow:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: inset 0 0 0 2px #e77b78, 1px 2px #563247;
 }
-#map-pin[hidden] { display: none; }
+.map-arrow:disabled { opacity: 0.35; cursor: default; }
+.map-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.map-dot {
+  width: 10px; height: 10px;
+  background: rgba(74, 47, 29, 0.28);
+  border: 2px solid var(--ink);
+  transition: background 0.2s ease;
+}
+.map-dot.active { background: var(--red); }
+body.night .map-dot { background: rgba(255, 255, 255, 0.2); border-color: #9db4e8; }
+body.night .map-dot.active { background: #ff9aac; }
 
 /* —— 游园会卡片装饰（暖色光源夜间不压暗） —— */
 .game-art {

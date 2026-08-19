@@ -137,7 +137,9 @@
 
     return Promise.all([remoteP, guestP]).then(function (res) {
       var base = JSON.parse(JSON.stringify(C0 || {}));
-      return { cfg: mergeDeep(base, res[0]), supabase: sb, guest: res[1] };
+      /* 旧结构服务端数据（无 banquets 键）先迁移，否则默认值会盖掉用户旧内容 */
+      var remote = window.migrateLegacyBanquets(res[0]);
+      return { cfg: mergeDeep(base, remote), supabase: sb, guest: res[1] };
     });
   }
 
@@ -158,8 +160,53 @@
       } catch (e) { /* 忽略 */ }
     }
 
-    C.couple = C.couple || {}; C.date = C.date || {}; C.venue = C.venue || {};
+    /* ---------- 模块顺序与显隐（hero 固定最前、footer 固定最后，不参与） ---------- */
+    var ftInfoTarget = '#notice';
+    function firstVisibleSection() {
+      var inv = $('#invitation');
+      var first = null;
+      $all('section.section', inv).forEach(function (el) {
+        if (!first && !el.classList.contains('hidden')) first = el;
+      });
+      return first;
+    }
+    function applySections(list) {
+      var inv = $('#invitation');
+      if (!inv) return;
+      var byId = {};
+      $all('section.section', inv).forEach(function (el) { byId[el.id] = el; });
+      var seen = {}, ordered = [];
+      (list || []).forEach(function (e) {
+        if (e && e.id && byId[e.id] && !seen[e.id]) { seen[e.id] = true; ordered.push(e.id); }
+      });
+      Object.keys(byId).forEach(function (id) { if (!seen[id]) ordered.push(id); });
+      ordered.forEach(function (id) {
+        var on = true;
+        (list || []).forEach(function (e) { if (e && e.id === id && e.on === false) on = false; });
+        byId[id].classList.toggle('hidden', !on);
+        inv.appendChild(byId[id]);
+      });
+      /* 页脚固定最后：sections 被 appendChild 到末尾会排到 footer 后面，再把它放回最后 */
+      var ft = inv.querySelector('footer');
+      if (ft) inv.appendChild(ft);
+      /* 浮动工具兜底：信息按钮目标被隐藏时改跳第一个可见的信息类模块 */
+      var ftInfo = $('#ft-info');
+      var infoVisible = ['#notice', '#notice-bride', '#notice-groom'].filter(function (s) {
+        var el = $(s);
+        return el && !el.classList.contains('hidden');
+      });
+      ftInfoTarget = infoVisible.length ? infoVisible[0] : '';
+      if (ftInfo) ftInfo.classList.toggle('hidden', !ftInfoTarget);
+      var ftRsvp = $('#ft-rsvp');
+      var rsvpEl = $('#rsvp');
+      if (ftRsvp) ftRsvp.classList.toggle('hidden', !rsvpEl || rsvpEl.classList.contains('hidden'));
+    }
+
+    /* 结构归一：男女双方婚宴补齐、顶层 date/venue 镜像男方主宴、sections 补全 */
+    C = window.normalizeWeddingConfig(C);
+    C.couple = C.couple || {};
     C.share = C.share || {};
+    applySections(C.sections);
 
     var groom = C.couple.groom || '新郎';
     var bride = C.couple.bride || '新娘';
@@ -180,6 +227,20 @@
     /* ============================================================
        一、填充静态文字 + 图标
        ============================================================ */
+    /* 婚宴日期行文案（统一介绍与男女方婚宴模块共用） */
+    function dateLine(d, weekChar) {
+      if (!d) return '';
+      var t = pad2(d.hour || 11) + ':' + pad2(d.minute || 58);
+      var lunar = d.lunar ? '\n' + d.lunar : '';
+      var wc = weekChar || '日一二三四五六'.charAt(new Date(d.year || 2026, (d.month || 1) - 1, d.day || 1).getDay());
+      return d.year + '年' + d.month + '月' + d.day + '日 星期' + wc + '\n' + t + ' 开席' + lunar;
+    }
+
+    function removeEl(sel) {
+      var el = $(sel);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+
     function fillStatic() {
       var title = C.share.title || (groom + ' & ' + bride + ' 的婚礼请柬');
       document.title = title;
@@ -191,9 +252,7 @@
       $('#foot-bride').textContent = bride;
       $('#hero-date').textContent = dateStr.replace(/\./g, ' · ');
       $('#hero-save').textContent = 'SAVE THE DATE';
-      $('#info-date').textContent =
-        C.date.year + '年' + C.date.month + '月' + C.date.day + '日 星期' + weekChar + '\n' + timeStr + ' 开席' + (lunarStr ? '\n' + lunarStr : '');
-      $('#info-venue').textContent = (C.venue.name || '') + ' · ' + (C.venue.address || '');
+      $('#info-date').textContent = dateLine(C.date, weekChar);
       $('#foot-date').textContent = dateStr + lunarStr;
 
       /* 专属邀请横幅 */
@@ -206,24 +265,20 @@
 
     function fillIcons() {
       $all('[data-heart]').forEach(function (el) { el.appendChild(PixelArt.sprite('heartSm', 3)); });
-      var ICONS = { calendar: ['calendar', 6], pin: ['pin', 6], heartSm: ['heartSm', 5], gift: ['gift', 6] };
+      var ICONS = { calendar: ['calendar', 6], pin: ['pin', 6], heartSm: ['heartSm', 5], gift: ['gift', 6], bride: ['bride', 2], groom: ['groom', 2] };
       $all('[data-icon]').forEach(function (el) {
         var k = el.getAttribute('data-icon');
         if (ICONS[k]) el.appendChild(PixelArt.sprite(ICONS[k][0], ICONS[k][1]));
       });
-      // 地图导航按钮 = 模板红色 pixel-button，文案已写在 HTML，不再注入图钉精灵
-      var icsBtn = $('#ics-btn');
-      icsBtn.appendChild(PixelArt.sprite('calendar', 5));
-      icsBtn.appendChild(document.createTextNode('添加到日历'));
-      var copyAddrBtn = $('#copy-addr-btn');
-      copyAddrBtn.appendChild(PixelArt.sprite('heartSm', 5));
-      copyAddrBtn.appendChild(document.createTextNode('复制地址'));
+      /* 婚宴/地图的「打开地图导航 / 复制地址 / 添加到日历」文案已直接写在 HTML 里，
+         全部是红底像素按钮，不再用精灵图标填充 */
     }
 
     /* ---------- 婚礼月历（婚礼日红心高亮） ---------- */
-    function buildCalendar() {
-      var el = $('#wedding-cal');
-      var y = C.date.year, m = C.date.month, d = C.date.day;
+    function buildCalendar(date, targetSel, markLabel) {
+      var el = $(targetSel);
+      if (!el || !date || !date.year) return;
+      var y = date.year, m = date.month, d = date.day;
       var daysInMonth = new Date(y, m, 0).getDate();
       var startDow = new Date(y, m - 1, 1).getDay();   // 0 = 周日
 
@@ -249,7 +304,7 @@
         cell.textContent = String(day);
         if (day === d) {
           var mark = makeDiv('cal-wed-mark');
-          mark.textContent = '♥ 婚礼日';
+          mark.textContent = markLabel || '♥ 婚礼日';
           cell.appendChild(mark);
         }
         grid.appendChild(cell);
@@ -261,20 +316,28 @@
     }
 
     /* ---------- 今日行程（序号徽章 + 时间 + 说明） ---------- */
-    function buildSchedule() {
-      var grid = $('#schedule-grid');
-      var list = C.schedule || [];
-      if (!list.length) { $('#schedule-heading').classList.add('hidden'); return; }
+    function buildSchedule(list, gridSel, headingSel) {
+      var grid = $(gridSel);
+      if (!grid) return;
+      list = list || [];
+      if (!list.length) {
+        var heading = $(headingSel);
+        if (heading) heading.classList.add('hidden');
+        return;
+      }
       list.forEach(function (item, i) {
         var cell = makeDiv('schedule-item');
         var idx = makeDiv('schedule-index');
         idx.textContent = pad2(i + 1);
         var body = makeDiv('schedule-body');
-        var head = document.createElement('b');
-        head.textContent = item.label || '';
-        var time = document.createElement('small');
-        time.textContent = item.time || '';
-        head.appendChild(time);
+        /* 左右对齐：环节名靠左、时间靠右同一行，说明独占下一行 */
+        var head = makeDiv('schedule-head');
+        var lb = document.createElement('b');
+        lb.textContent = item.label || '';
+        var tm = document.createElement('small');
+        tm.textContent = item.time || '';
+        head.appendChild(lb);
+        head.appendChild(tm);
         var desc = document.createElement('p');
         desc.textContent = item.desc || '';
         body.appendChild(head);
@@ -614,18 +677,18 @@
       scene.appendChild(hills);
       scene.appendChild(stars);
 
-      /* 点击开启邀请函 → 滚到邀请函区 */
+      /* 点击开启邀请函 → 滚到第一个可见模块（模块顺序可在编辑器自定义） */
       $('#hero-scroll-btn').addEventListener('click', function () {
-        var el = $('#notice');
+        var el = firstVisibleSection() || $('#notice');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       });
     }
 
-    /* ---------- 邀请函区装饰：左下角花草 ---------- */
-    function buildNoticeDeco() {
-      var holder = $('#notice-flowers');
+    /* ---------- 邀请函区装饰：左下角花草（可给多个模块画） ---------- */
+    function buildNoticeDeco(holderSel, spots) {
+      var holder = $(holderSel);
       if (!holder) return;
-      var spots = [
+      spots = spots || [
         ['4%', 8, -18], ['12%', 2, 8], ['20%', 10, -6]
       ];
       spots.forEach(function (s) {
@@ -753,8 +816,9 @@
       var index = 0;
       var openCount = 0;
       var closeTimer = null;
+      var overrideDeck = null;   /* 婚宴相册等外部照片列表打开时临时接管，close 后复位 */
 
-      function deck() { return photoDeck; }
+      function deck() { return overrideDeck || photoDeck; }
 
       function show(i) {
         var d = deck();
@@ -789,9 +853,18 @@
         closeTimer = setTimeout(function () {
           el.hidden = true;
           openCount--;
+          overrideDeck = null;   /* 所有关闭路径共用 close，在这里复位接管列表 */
           document.body.classList.remove('lock');
           if (slideshowApi) slideshowApi.resume('lightbox');
         }, 250);
+      }
+
+      /* 用任意照片列表打开（婚宴相册等）：close 后自动恢复婚礼节照片 deck */
+      function openIn(list, i) {
+        overrideDeck = (list || []).map(function (s) {
+          return typeof s === 'string' ? { src: s } : s;
+        });
+        open(i);
       }
 
       $('#lb-prev').addEventListener('click', function (e) { e.stopPropagation(); show(index - 1); });
@@ -823,6 +896,7 @@
 
       return {
         open: open,
+        openIn: openIn,
         close: close,
         isOpen: function () { return openCount > 0; }
       };
@@ -852,15 +926,20 @@
     /* ============================================================
        七、倒计时
        ============================================================ */
-    function buildCountdown() {
-      var target = new Date(C.date.year, C.date.month - 1, C.date.day, C.date.hour, C.date.minute).getTime();
-      var cdLabel = $('#countdown').parentElement.querySelector('.info-label');
-      var els = { d: $('#cd-days'), h: $('#cd-hours'), m: $('#cd-mins'), s: $('#cd-secs') };
+    function buildCountdown(date, rootSel, endLabel) {
+      var root = $(rootSel);
+      if (!root || !date || !date.year) return;
+      var target = new Date(date.year, date.month - 1, date.day, date.hour, date.minute).getTime();
+      var cdLabel = root.parentElement ? root.parentElement.querySelector('.info-label') : null;
+      /* 数字格按 class .cd-num 顺序取（d/h/m/s），id 各实例不同但 class 相同 */
+      var nums = root.querySelectorAll('.cd-num');
+      var els = { d: nums[0], h: nums[1], m: nums[2], s: nums[3] };
+      if (!cdLabel || !els.d || !els.s) return;
 
       function tick() {
         var diff = target - Date.now();
         if (diff <= 0) {
-          cdLabel.textContent = '我们已经结婚啦 ♥';
+          cdLabel.textContent = endLabel || '我们已经结婚啦 ♥';
           els.d.textContent = els.h.textContent = els.m.textContent = els.s.textContent = '00';
           return;
         }
@@ -874,74 +953,178 @@
     }
 
     /* ============================================================
-       八、邀请函板（住宿说明 + 今日行程 + 婚礼月历）
+       八、统一介绍板（时间 + 倒计时 + 婚礼月历；行程归各婚宴自己）
        ============================================================ */
-    function buildInfo() {
-      var v = C.venue;
-
-      /* 住宿与接送说明（编辑器里填了才显示） */
-      if (v && v.notice) {
-        var notice = $('#info-notice');
-        notice.hidden = false;
-        var icon = makeDiv('info-notice-icon');
-        icon.appendChild(PixelArt.sprite('star', 4));
-        var body = makeDiv('info-notice-body');
-        var t = document.createElement('div');
-        t.className = 'info-notice-title';
-        t.textContent = '住宿 & 接送安排';
-        var p = document.createElement('p');
-        p.textContent = v.notice;
-        body.appendChild(t);
-        body.appendChild(p);
-        notice.appendChild(icon);
-        notice.appendChild(body);
+    function buildIntro() {
+      /* 倒计时（编辑器可关；关闭时整行移除，保证 .info-row 边框逻辑正确） */
+      if (C.intro && C.intro.countdown !== false) {
+        buildCountdown(C.banquets.groom.date, '#countdown', '我们已经结婚啦 ♥');
+      } else {
+        var cd = $('#countdown');
+        if (cd && cd.closest) {
+          var cdRow = cd.closest('.info-row');
+          if (cdRow && cdRow.parentNode) cdRow.parentNode.removeChild(cdRow);
+        }
       }
 
-      /* 今日行程 */
-      buildSchedule();
+      /* 婚礼月历（编辑器可关） */
+      if (C.intro && C.intro.calendar !== false) {
+        buildCalendar(C.banquets.groom.date, '#wedding-cal', '♥ 婚礼日');
+      } else {
+        removeEl('#wedding-cal');
+      }
+    }
 
-      /* 婚礼月历（婚礼日高亮） */
-      buildCalendar();
+    /* ---------- 婚宴模块（女方/男方）：开席时间 + 地址 + 可展开的完整婚礼信息 ---------- */
+    /* 婚宴相册：任意张照片（编辑器上传）——左右滑动 + 圆点 + 自动轮播，点任意张全屏灯箱；
+       1 张时纯静态展示；空数组整个相册移除；全部加载失败也移除 */
+    function buildBanquetAlbum(prefix, photos) {
+      var album = $('#' + prefix + '-album');
+      var swipe = $('#' + prefix + '-album-swipe');
+      var dotsEl = $('#' + prefix + '-album-dots');
+      if (!album || !swipe || !dotsEl) return;
+      var list = (photos || []).filter(function (p) { return p; });
+      if (!list.length) { removeEl('#' + prefix + '-album'); return; }
+
+      var idx = 0;
+      list.forEach(function (url, i) {
+        var slide = makeDiv('album-slide');
+        var img = document.createElement('img');
+        img.alt = '婚宴照片 ' + (i + 1);
+        img.onerror = function () {
+          slide.classList.add('hidden');
+          /* 全部加载失败 → 整个相册移除 */
+          var any = $all('.album-slide', swipe).some(function (s) {
+            return !s.classList.contains('hidden');
+          });
+          if (!any) removeEl('#' + prefix + '-album');
+        };
+        img.src = url;
+        slide.appendChild(img);
+        slide.addEventListener('click', function () { lightbox.openIn(list, i); });
+        swipe.appendChild(slide);
+      });
+
+      if (list.length > 1) {
+        list.forEach(function (_, i) {
+          var dot = makeDiv('album-dot');
+          dot.classList.toggle('active', i === 0);
+          dotsEl.appendChild(dot);
+        });
+        swipe.addEventListener('scroll', function () {
+          idx = Math.round(swipe.scrollLeft / Math.max(1, swipe.clientWidth));
+          $all('.album-dot', dotsEl).forEach(function (dot, j) {
+            dot.classList.toggle('active', j === idx);
+          });
+        }, { passive: true });
+        /* 自动轮播：系统「减弱动态效果」时关闭；模块被隐藏（display:none）时跳过 */
+        var reduce = false;
+        try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* 忽略 */ }
+        if (!reduce) {
+          setInterval(function () {
+            if (!album.offsetParent) return;
+            var next = (idx + 1) % list.length;
+            swipe.scrollTo({ left: next * swipe.clientWidth, behavior: 'smooth' });
+          }, 4000);
+        }
+      }
+    }
+
+    function buildBanquet(prefix, b) {
+      if (!b) return;
+      var dateEl = $('#' + prefix + '-info-date');
+      if (dateEl) dateEl.textContent = dateLine(b.date);
+      var venueEl = $('#' + prefix + '-info-venue');
+      if (venueEl) venueEl.textContent = ((b.venue && b.venue.name) || '') + ' · ' + ((b.venue && b.venue.address) || '');
+
+      /* 婚宴相册（照片数组，编辑器「照片」页管理） */
+      buildBanquetAlbum(prefix, b.photos);
+
+      var more = $('#' + prefix + '-more');
+      var btn = $('#' + prefix + '-more-btn');
+      var bodyEl = $('#' + prefix + '-more-body');
+      if (!more || !btn || !bodyEl) return;
+
+      /* 今日行程（该场自己的流程，留空则不显示） */
+      buildSchedule(b.schedule, '#' + prefix + '-schedule-grid', '#' + prefix + '-schedule-heading');
+
+      /* 交通安排（该场自己的；两项都留空则整块交通不显示） */
+      var tr = b.transport || {};
+      if (!tr.public && !tr.car) {
+        removeEl('#' + prefix + '-transport-grid');
+      } else {
+        $('#' + prefix + '-transport-public').textContent = tr.public || '';
+        $('#' + prefix + '-transport-car').textContent = tr.car || '';
+      }
+
+      /* 住宿与接送说明（编辑器里填了才显示） */
+      if (b.venue && b.venue.notice) {
+        var notice = $('#' + prefix + '-info-notice');
+        if (notice) {
+          notice.hidden = false;
+          var icon = makeDiv('info-notice-icon');
+          icon.appendChild(PixelArt.sprite('star', 4));
+          var body = makeDiv('info-notice-body');
+          var t = document.createElement('div');
+          t.className = 'info-notice-title';
+          t.textContent = '住宿 & 接送安排';
+          var p = document.createElement('p');
+          p.textContent = b.venue.notice;
+          body.appendChild(t);
+          body.appendChild(p);
+          notice.appendChild(icon);
+          notice.appendChild(body);
+        }
+      }
+
+      /* 倒计时 / 月历：编辑器里"看情况添加"，默认关 */
+      if (b.countdown) buildCountdown(b.date, '#' + prefix + '-countdown', '喜宴已开席 ♥');
+      else removeEl('#' + prefix + '-cd-row');
+      if (b.calendar) buildCalendar(b.date, '#' + prefix + '-wedding-cal', '♥ 开席');
+      else removeEl('#' + prefix + '-wedding-cal');
+
+      /* 高德导航 / 复制地址 / 添加到日历（与山谷地图完全一致，各用该场自己的数据） */
+      var bv = b.venue || {};
+      $('#' + prefix + '-map-btn').href = 'https://uri.amap.com/marker?position=' + (bv.lng || 0) + ',' + (bv.lat || 0) +
+        '&name=' + encodeURIComponent(bv.name || '婚礼地点') + '&src=wedding&callnative=1';
+      $('#' + prefix + '-copy-btn').addEventListener('click', function () {
+        copyText((bv.name || '') + ' ' + (bv.address || ''));
+        toast('地址已复制，去粘贴给朋友吧 ♥');
+      });
+      $('#' + prefix + '-ics-btn').addEventListener('click', makeICSHandler(b.date, bv));
+
+      /* 整块开关：编辑器关闭（info.on=false）或四项内容全空时，移除整个信息块 */
+      var hasContent = (b.schedule && b.schedule.length) ||
+        (tr.public || tr.car) || (b.venue && b.venue.notice) || b.countdown || b.calendar;
+      if (b.info && b.info.on === false) hasContent = false;
+      if (!hasContent) { removeEl('#' + prefix + '-more'); return; }
+
+      /* 默认展开/收起 + 点击切换 */
+      if (b.info && b.info.expanded === true) {
+        bodyEl.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        btn.querySelector('.bm-arrow').textContent = '▲';
+      }
+      btn.addEventListener('click', function () {
+        var open = bodyEl.hidden;
+        bodyEl.hidden = !open;
+        btn.setAttribute('aria-expanded', String(open));
+        btn.querySelector('.bm-arrow').textContent = open ? '▲' : '▼';
+      });
     }
 
     /* ============================================================
-       九、山谷地图：像素地图 + 图钉 + 交通指引 + 导航/复制/加日历
+       九、山谷地图：女方/男方两场地左右滑动（实景照片 + 交通 + 导航/复制/加日历）
        ============================================================ */
-    function buildMap() {
-      var v = C.venue;
-
-      /* 地图大图（加载失败则隐藏画框） */
-      $('#map-img').onerror = function () { $('#map-frame').classList.add('hidden'); };
-      $('#map-pin').hidden = false;
-
-      /* 卡片头部：现实世界目的地（酒店名） */
-      $('#map-venue').textContent = (v && v.name) || '';
-
-      /* 交通指引两张小卡片（图标已是模板 bus/horse 图片，只填文案） */
-      var tr = C.transport || {};
-      if (!tr.public && !tr.car) {
-        $('#map .transport-grid').classList.add('hidden');
-      } else {
-        $('#transport-public').textContent = tr.public || '';
-        $('#transport-car-text').textContent = tr.car || '';
-      }
-
-      /* 复制地址 */
-      $('#copy-addr-btn').addEventListener('click', function () {
-        copyText((v.name || '') + ' ' + (v.address || ''));
-        toast('地址已复制，去粘贴给朋友吧 ♥');
-      });
-
-      $('#map-btn').href = 'https://uri.amap.com/marker?position=' + (v.lng || 0) + ',' + (v.lat || 0) +
-        '&name=' + encodeURIComponent(v.name || '婚礼地点') + '&src=wedding&callnative=1';
-
+    /* 生成 .ics 日历下载（每场婚宴各自的时间/地点，山谷地图与婚宴模块共用） */
+    function makeICSHandler(d, v) {
       function toICS(ts) {
-        var d = new Date(ts);
-        return '' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
-          'T' + pad2(d.getHours()) + pad2(d.getMinutes()) + '00';
+        var dt = new Date(ts);
+        return '' + dt.getFullYear() + pad2(dt.getMonth() + 1) + pad2(dt.getDate()) +
+          'T' + pad2(dt.getHours()) + pad2(dt.getMinutes()) + '00';
       }
-      $('#ics-btn').addEventListener('click', function () {
-        var start = new Date(C.date.year, C.date.month - 1, C.date.day, C.date.hour, C.date.minute).getTime();
+      return function () {
+        var start = new Date(d.year, d.month - 1, d.day, d.hour, d.minute).getTime();
         var ics = [
           'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PixelWedding//CN',
           'BEGIN:VEVENT',
@@ -964,7 +1147,82 @@
         if (/MicroMessenger/i.test(navigator.userAgent)) {
           toast('如果没反应：点右上角「···」→ 在浏览器打开，再点一次');
         }
+      };
+    }
+
+    function buildMap() {
+      /* 两个场地（女方在前）：实景照片（编辑器可换，留空用内置像素地图）+ 场地卡，左右滑动切换 */
+      [['b', C.banquets.bride], ['g', C.banquets.groom]].forEach(function (pair) {
+        var p = pair[0], bq = pair[1] || {};
+        var v = bq.venue || {};
+
+        /* 实景照片（加载失败先退回内置像素地图，再失败才隐藏画框） */
+        var photoImg = $('#' + p + '-map-photo-img');
+        if (photoImg) {
+          photoImg.onerror = function () {
+            if (photoImg.src.indexOf('pelican-town') < 0) {
+              photoImg.src = 'assets/tpl/pelican-town.webp';
+            } else if (photoImg.parentNode) {
+              photoImg.parentNode.classList.add('hidden');
+            }
+          };
+          photoImg.src = v.photo || 'assets/tpl/pelican-town.webp';
+        }
+
+        /* 卡片头部：现实世界目的地（酒店名） */
+        $('#' + p + '-map-venue').textContent = v.name || '';
+
+        /* 交通指引两张小卡片（该场自己的交通；两项都空则整块隐藏） */
+        var tr = bq.transport || {};
+        if (!tr.public && !tr.car) {
+          var tg = $('#' + p + '-map-transport-public');
+          if (tg && tg.closest) tg.closest('.transport-grid').classList.add('hidden');
+        } else {
+          $('#' + p + '-map-transport-public').textContent = tr.public || '';
+          $('#' + p + '-map-transport-car').textContent = tr.car || '';
+        }
+
+        /* 高德导航 / 复制地址 / 添加到日历（该场自己的坐标与时间） */
+        $('#' + p + '-map-nav').href = 'https://uri.amap.com/marker?position=' + (v.lng || 0) + ',' + (v.lat || 0) +
+          '&name=' + encodeURIComponent(v.name || '婚礼地点') + '&src=wedding&callnative=1';
+        $('#' + p + '-map-copy').addEventListener('click', function () {
+          copyText((v.name || '') + ' ' + (v.address || ''));
+          toast('地址已复制，去粘贴给朋友吧 ♥');
+        });
+        $('#' + p + '-map-ics').addEventListener('click', makeICSHandler(bq.date, v));
       });
+
+      /* 场地切换三通道：左右滑动 / 上方选项卡 / 左右箭头按钮，状态统一按滚动位置同步 */
+      var swipe = $('#map-swipe');
+      var slides = $all('#map .map-slide');
+      var dots = $all('#map .map-dot');
+      var tabs = [$('#map-tab-b'), $('#map-tab-g')];
+      var arrowL = $('#map-arrow-l'), arrowR = $('#map-arrow-r');
+
+      function mapIndex() {
+        return Math.round(swipe.scrollLeft / Math.max(1, swipe.clientWidth));
+      }
+      function syncMapNav() {
+        var i = mapIndex();
+        dots.forEach(function (dot, j) { dot.classList.toggle('active', j === i); });
+        tabs.forEach(function (t, j) { if (t) t.classList.toggle('active', j === i); });
+        if (arrowL) arrowL.disabled = i <= 0;
+        if (arrowR) arrowR.disabled = i >= slides.length - 1;
+      }
+      function scrollToSlide(i) {
+        if (!slides.length) return;
+        i = Math.max(0, Math.min(slides.length - 1, i));
+        swipe.scrollTo({ left: i * swipe.clientWidth, behavior: 'smooth' });
+      }
+      /* 测试钩子：tools/verify.html 用（无头浏览器不播放平滑滚动动画，用它验证选项卡/箭头确实调用了滑动） */
+      window.__mapGoTo = scrollToSlide;
+      swipe.addEventListener('scroll', syncMapNav, { passive: true });
+      tabs.forEach(function (t, i) {
+        if (t) t.addEventListener('click', function () { window.__mapGoTo(i); });
+      });
+      if (arrowL) arrowL.addEventListener('click', function () { window.__mapGoTo(mapIndex() - 1); });
+      if (arrowR) arrowR.addEventListener('click', function () { window.__mapGoTo(mapIndex() + 1); });
+      syncMapNav();
     }
 
     /* ============================================================
@@ -1197,13 +1455,16 @@
       var pills = $all('#rsvp-attending label');
       var countField = $('#rsvp-count-field');
       var accField = $('#rsvp-accommodation-field');
+      /* 住宿登记选项开关（编辑器可关；关闭后不再询问住宿，提交默认按"无需住宿"） */
+      var accOn = !C.rsvp || C.rsvp.accommodation !== false;
+      if (!accOn) accField.classList.add('hidden');
       pills.forEach(function (lbl) {
         lbl.addEventListener('click', function () {
           pills.forEach(function (x) { x.classList.remove('checked'); });
           lbl.classList.add('checked');
           var no = lbl.getAttribute('data-val') === 'no';
           countField.classList.toggle('hidden', no);
-          accField.classList.toggle('hidden', no);
+          accField.classList.toggle('hidden', no || !accOn);
         });
       });
 
@@ -1213,7 +1474,7 @@
       function updateAccommodation() {
         var checked = accPills.filter(function (x) { return x.classList.contains('checked'); })[0];
         var needs = !!(checked && checked.getAttribute('data-val') === 'yes');
-        datesBox.hidden = !needs;
+        datesBox.hidden = !needs || !accOn;
         if (!needs) {
           $('#rsvp-checkin').value = '';
           $('#rsvp-checkout').value = '';
@@ -1342,7 +1603,7 @@
           if (input) input.checked = on;
         });
         countField.classList.toggle('hidden', attendVal === 'no');
-        accField.classList.toggle('hidden', attendVal === 'no');
+        accField.classList.toggle('hidden', attendVal === 'no' || !accOn);
         guestCount = s.guestCount || 1;
         stepperVal.textContent = guestCount;
         var accVal = s.needsAcc ? 'yes' : 'no';
@@ -1377,7 +1638,7 @@
         pills[0].classList.add('checked');
         accPills.forEach(function (x) { x.classList.remove('checked'); });
         countField.classList.remove('hidden');
-        accField.classList.remove('hidden');
+        accField.classList.toggle('hidden', !accOn);
         guestCount = 1;
         stepperVal.textContent = '1';
         msgCount.textContent = '0';
@@ -1444,7 +1705,8 @@
       var ftInfo = $('#ft-info');
       ftInfo.appendChild(PixelArt.sprite('pin', 5));
       ftInfo.addEventListener('click', function () {
-        $('#notice').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var el = $(ftInfoTarget) || $('#notice');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       var ftRsvp = $('#ft-rsvp');
       ftRsvp.appendChild(PixelArt.sprite('heartSm', 5));
@@ -1760,7 +2022,12 @@
         { sel: '#guests .animal-grid', styles: { top: '-8px', left: '12%' } },
         { sel: '#game-fireworks .firework-sky', styles: { bottom: '8px', right: '10px' } }
       ];
-      var total = Math.min(t && t.count ? t.count : 6, HOSTS.length);
+      /* 只统计可见宿主：模块被隐藏时爱心挂进 display:none 永远点不到 */
+      var visibleHosts = HOSTS.filter(function (h) {
+        var el = $(h.sel);
+        return !!el && !el.closest('.hidden') && el.offsetParent !== null;
+      });
+      var total = Math.min(t && t.count ? t.count : 6, visibleHosts.length);
       var reward = (t && t.reward) || '集齐了！山谷的心意都归你 ♥';
       var found = [];
       try { found = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { found = []; }
@@ -1775,7 +2042,7 @@
         $('#treasure-reward').textContent = reward;
       }
 
-      HOSTS.forEach(function (host, i) {
+      visibleHosts.forEach(function (host, i) {
         var el = $(host.sel);
         if (!el) return;
         el.classList.add('treasure-host');
@@ -1904,12 +2171,15 @@
       fillIcons();
       buildEnvelope();
       buildHero();
-      buildNoticeDeco();
+      buildNoticeDeco('#notice-flowers');
+      buildNoticeDeco('#b-flowers', [['6%', 6, -12], ['18%', 12, 4]]);
+      buildNoticeDeco('#g-flowers', [['8%', 10, 10], ['16%', 4, -8]]);
       buildParallax();
       buildCeremony();   /* 照片序列就绪后由它内部调 buildGallery */
       buildDialogue();
-      buildCountdown();
-      buildInfo();
+      buildIntro();
+      buildBanquet('b', C.banquets.bride);
+      buildBanquet('g', C.banquets.groom);
       buildMap();
       buildQuest();
       buildMascots('#quest-mascots', 6);

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>内容管理 · 婚礼后台</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/editor.css">
+  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/editor.css?v=4">
 </head>
 <body class="admin-body">
 
@@ -44,6 +44,7 @@
         <button class="tab" data-tab="photos" type="button">照片</button>
         <button class="tab" data-tab="guests" type="button">嘉宾</button>
         <button class="tab" data-tab="games" type="button">游戏</button>
+        <button class="tab" data-tab="modules" type="button">模块</button>
         <button class="tab" data-tab="board" type="button">看板</button>
       </nav>
 
@@ -62,48 +63,120 @@
         </div>
 
         <div class="panel editor-panel">
-          <h2 class="editor-sub">婚礼时间</h2>
+          <h2 class="editor-sub">统一介绍（时间 · 倒计时 · 月历）</h2>
+          <p class="editor-hint">这一块显示在「参加我们的婚礼」和「婚礼节」之间：开席时间与男方婚宴一致，倒计时和月历按需显示。今日行程归各婚宴自己配（见下方）。</p>
+          <div class="editor-switches" style="margin-top:18px">
+            <label class="editor-switch"><input type="checkbox" id="ed-i-countdown" checked><span>倒计时</span></label>
+            <label class="editor-switch"><input type="checkbox" id="ed-i-calendar" checked><span>婚礼月历</span></label>
+          </div>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">女方婚宴</h2>
           <div class="editor-grid editor-grid-5">
-            <div class="field"><label for="ed-year">年</label><input type="number" id="ed-year" min="2020" max="2100"></div>
-            <div class="field"><label for="ed-month">月</label><input type="number" id="ed-month" min="1" max="12"></div>
-            <div class="field"><label for="ed-day">日</label><input type="number" id="ed-day" min="1" max="31"></div>
-            <div class="field"><label for="ed-hour">时</label><input type="number" id="ed-hour" min="0" max="23"></div>
-            <div class="field"><label for="ed-minute">分</label><input type="number" id="ed-minute" min="0" max="59"></div>
+            <div class="field"><label for="ed-b-year">年</label><input type="number" id="ed-b-year" min="2020" max="2100"></div>
+            <div class="field"><label for="ed-b-month">月</label><input type="number" id="ed-b-month" min="1" max="12"></div>
+            <div class="field"><label for="ed-b-day">日</label><input type="number" id="ed-b-day" min="1" max="31"></div>
+            <div class="field"><label for="ed-b-hour">时</label><input type="number" id="ed-b-hour" min="0" max="23"></div>
+            <div class="field"><label for="ed-b-minute">分</label><input type="number" id="ed-b-minute" min="0" max="59"></div>
           </div>
           <div class="field">
-            <label for="ed-lunar">农历（选填，如：农历八月廿一）</label>
-            <input type="text" id="ed-lunar" maxlength="20">
+            <label for="ed-b-lunar">农历（选填，如：农历八月廿一）</label>
+            <input type="text" id="ed-b-lunar" maxlength="20">
           </div>
-          <p class="editor-hint">时间按 24 小时制填写，倒计时和「添加到日历」都会跟着变。</p>
-        </div>
-
-        <div class="panel editor-panel">
-          <h2 class="editor-sub">地点</h2>
           <div class="editor-grid">
-            <div class="field"><label for="ed-venue-name">场地名称</label><input type="text" id="ed-venue-name" maxlength="40"></div>
-            <div class="field"><label for="ed-venue-address">详细地址</label><input type="text" id="ed-venue-address" maxlength="80"></div>
-            <div class="field"><label for="ed-lng">经度 lng</label><input type="number" id="ed-lng" step="any"></div>
-            <div class="field"><label for="ed-lat">纬度 lat</label><input type="number" id="ed-lat" step="any"></div>
+            <div class="field"><label for="ed-b-venue-name">场地名称</label><input type="text" id="ed-b-venue-name" maxlength="40"></div>
+            <div class="field"><label for="ed-b-venue-address">详细地址</label><input type="text" id="ed-b-venue-address" maxlength="80"></div>
+            <div class="field"><label for="ed-b-lng">经度 lng</label><input type="number" id="ed-b-lng" step="any"></div>
+            <div class="field"><label for="ed-b-lat">纬度 lat</label><input type="number" id="ed-b-lat" step="any"></div>
           </div>
-          <p class="editor-hint">经度纬度用于「地图导航」按钮：打开高德坐标拾取器 lbs.amap.com/tools/picker，搜到场地后复制右侧的经度、纬度。</p>
-          <div class="field" style="margin-top:18px"><label for="ed-venue-notice">住宿 & 接送说明（选填，留空则不显示）</label><textarea id="ed-venue-notice" maxlength="400" placeholder="例如：外地宾客可入住 XX 酒店（约 10 分钟车程）；婚礼当天 10:30 在地铁 XX 站 C 口有接驳车接送。"></textarea></div>
+          <p class="editor-hint">女方场地坐标用于「打开地图导航」跳转高德，用 lbs.amap.com/tools/picker 获取；不填会跳到默认占位点，务必填真实值。</p>
+          <div class="field" style="margin-top:18px"><label for="ed-b-venue-notice">住宿 &amp; 接送说明（选填，留空则不显示）</label><textarea id="ed-b-venue-notice" maxlength="400" placeholder="例如：外地宾客可入住 XX 酒店（约 10 分钟车程）；婚礼当天 10:30 在地铁 XX 站 C 口有接驳车接送。"></textarea></div>
+          <div class="editor-grid" style="margin-top:18px">
+            <div class="field"><label for="ed-b-map-photo">山谷地图实景照片地址（选填）</label><input type="text" id="ed-b-map-photo" placeholder="留空 = 使用内置像素地图"></div>
+          </div>
+          <div class="editor-upload-row">
+            <button class="btn btn-wood" id="b-map-photo-upload" type="button">上传实景照片</button>
+            <input type="file" id="b-map-photo-file" accept="image/*" hidden>
+          </div>
+          <p class="editor-hint">点「上传实景照片」地址自动填入左侧「山谷地图实景照片」，这张照片会显示在山谷地图的女方场地卡片上；新人照留空则不显示照片。</p>
+          <div class="field" style="margin-top:18px">
+            <label>今日行程（该场自己的流程；点「＋ 添加流程」加一行，行数不限）</label>
+            <div class="sched-rows" id="b-sched-rows"></div>
+            <button class="btn btn-wood" id="b-sched-add" type="button">＋ 添加流程</button>
+          </div>
+          <p class="editor-hint">「环节」靠左、「时间」靠右显示在同一行，说明独占下一行；三栏都留空的行保存时自动丢弃。</p>
+          <div class="editor-grid" style="margin-top:18px">
+            <div class="field"><label for="ed-b-transport-public">公共交通</label><input type="text" id="ed-b-transport-public" maxlength="40" placeholder="例如：地铁 XX 站下车后打车前往"></div>
+            <div class="field"><label for="ed-b-transport-car">自驾前往</label><input type="text" id="ed-b-transport-car" maxlength="40" placeholder="例如：导航至酒店停车场"></div>
+          </div>
+          <div class="editor-switches" style="margin-top:18px">
+            <label class="editor-switch"><input type="checkbox" id="ed-b-info-on" checked><span>显示「完整婚礼信息」块</span></label>
+            <label class="editor-switch"><input type="checkbox" id="ed-b-info-expanded"><span>默认展开</span></label>
+          </div>
+          <div class="editor-switches" style="margin-top:10px">
+            <label class="editor-switch"><input type="checkbox" id="ed-b-countdown"><span>倒计时</span></label>
+            <label class="editor-switch"><input type="checkbox" id="ed-b-calendar"><span>婚礼月历</span></label>
+          </div>
+          <p class="editor-hint">「完整婚礼信息」块默认收起，点击展开，里面包含：今日行程、交通、住宿接送、倒计时、月历（勾了才显示）。倒计时 / 月历默认不显示，需要时勾上；女方婚宴不影响山谷地图和首页日期。</p>
         </div>
 
         <div class="panel editor-panel">
-          <h2 class="editor-sub">今日行程</h2>
+          <h2 class="editor-sub">男方婚宴</h2>
+          <div class="editor-grid editor-grid-5">
+            <div class="field"><label for="ed-g-year">年</label><input type="number" id="ed-g-year" min="2020" max="2100"></div>
+            <div class="field"><label for="ed-g-month">月</label><input type="number" id="ed-g-month" min="1" max="12"></div>
+            <div class="field"><label for="ed-g-day">日</label><input type="number" id="ed-g-day" min="1" max="31"></div>
+            <div class="field"><label for="ed-g-hour">时</label><input type="number" id="ed-g-hour" min="0" max="23"></div>
+            <div class="field"><label for="ed-g-minute">分</label><input type="number" id="ed-g-minute" min="0" max="59"></div>
+          </div>
           <div class="field">
-            <label for="ed-schedule">行程安排（每行一项）</label>
-            <textarea id="ed-schedule" rows="5"></textarea>
+            <label for="ed-g-lunar">农历（选填，如：农历八月廿一）</label>
+            <input type="text" id="ed-g-lunar" maxlength="20">
           </div>
-          <p class="editor-hint">每行一项，格式：时间|环节|说明。例如：10:30|签到|领取今日任务，与老朋友相见。留空则不显示行程。</p>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-g-venue-name">场地名称</label><input type="text" id="ed-g-venue-name" maxlength="40"></div>
+            <div class="field"><label for="ed-g-venue-address">详细地址</label><input type="text" id="ed-g-venue-address" maxlength="80"></div>
+            <div class="field"><label for="ed-g-lng">经度 lng</label><input type="number" id="ed-g-lng" step="any"></div>
+            <div class="field"><label for="ed-g-lat">纬度 lat</label><input type="number" id="ed-g-lat" step="any"></div>
+          </div>
+          <p class="editor-hint">男方婚宴的时间地点同时驱动请柬封面日期、「添加到日历」和山谷地图导航。时间按 24 小时制填写；经度纬度打开高德坐标拾取器 lbs.amap.com/tools/picker 获取。</p>
+          <div class="field" style="margin-top:18px"><label for="ed-g-venue-notice">住宿 &amp; 接送说明（选填，留空则不显示）</label><textarea id="ed-g-venue-notice" maxlength="400" placeholder="例如：外地宾客可入住 XX 酒店（约 10 分钟车程）；婚礼当天 10:30 在地铁 XX 站 C 口有接驳车接送。"></textarea></div>
+          <div class="editor-grid" style="margin-top:18px">
+            <div class="field"><label for="ed-g-map-photo">山谷地图实景照片地址（选填）</label><input type="text" id="ed-g-map-photo" placeholder="留空 = 使用内置像素地图"></div>
+          </div>
+          <div class="editor-upload-row">
+            <button class="btn btn-wood" id="g-map-photo-upload" type="button">上传实景照片</button>
+            <input type="file" id="g-map-photo-file" accept="image/*" hidden>
+          </div>
+          <p class="editor-hint">点「上传实景照片」地址自动填入左侧「山谷地图实景照片」，这张照片会显示在山谷地图的男方场地卡片上；新人照留空则不显示照片。</p>
+          <div class="field" style="margin-top:18px">
+            <label>今日行程（该场自己的流程；点「＋ 添加流程」加一行，行数不限）</label>
+            <div class="sched-rows" id="g-sched-rows"></div>
+            <button class="btn btn-wood" id="g-sched-add" type="button">＋ 添加流程</button>
+          </div>
+          <p class="editor-hint">「环节」靠左、「时间」靠右显示在同一行，说明独占下一行；三栏都留空的行保存时自动丢弃。</p>
+          <div class="editor-grid" style="margin-top:18px">
+            <div class="field"><label for="ed-g-transport-public">公共交通</label><input type="text" id="ed-g-transport-public" maxlength="40" placeholder="例如：地铁 XX 站下车后打车前往"></div>
+            <div class="field"><label for="ed-g-transport-car">自驾前往</label><input type="text" id="ed-g-transport-car" maxlength="40" placeholder="例如：导航至酒店停车场"></div>
+          </div>
+          <div class="editor-switches" style="margin-top:18px">
+            <label class="editor-switch"><input type="checkbox" id="ed-g-info-on" checked><span>显示「完整婚礼信息」块</span></label>
+            <label class="editor-switch"><input type="checkbox" id="ed-g-info-expanded"><span>默认展开</span></label>
+          </div>
+          <div class="editor-switches" style="margin-top:10px">
+            <label class="editor-switch"><input type="checkbox" id="ed-g-countdown"><span>倒计时</span></label>
+            <label class="editor-switch"><input type="checkbox" id="ed-g-calendar"><span>婚礼月历</span></label>
+          </div>
+          <p class="editor-hint">「完整婚礼信息」块默认收起，点击展开，里面包含：今日行程、交通、住宿接送、倒计时、月历（勾了才显示）。男方的交通安排会同步显示在山谷地图里。倒计时 / 月历默认不显示，需要时勾上。</p>
         </div>
 
         <div class="panel editor-panel">
-          <h2 class="editor-sub">交通指引</h2>
-          <div class="editor-grid">
-            <div class="field"><label for="ed-transport-public">公共交通</label><input type="text" id="ed-transport-public" maxlength="40" placeholder="例如：地铁 XX 站下车后打车前往"></div>
-            <div class="field"><label for="ed-transport-car">自驾前往</label><input type="text" id="ed-transport-car" maxlength="40" placeholder="例如：导航至酒店停车场"></div>
+          <h2 class="editor-sub">出席回执</h2>
+          <div class="editor-switches">
+            <label class="editor-switch"><input type="checkbox" id="ed-acc-on" checked><span>询问住宿安排</span></label>
           </div>
+          <p class="editor-hint">关闭后，回执表单不再显示「需不需要住宿」和入住 / 退房日期。</p>
         </div>
 
         <div class="panel editor-panel">
@@ -181,6 +254,24 @@
           <p class="editor-hint">建议宽高比 4:3、单张 1MB 以内，上传后请柬即时显示。</p>
         </div>
         <div class="panel editor-panel">
+          <h2 class="editor-sub">女方婚宴照片</h2>
+          <div class="photo-grid" id="b-album-grid"></div>
+          <p id="b-album-empty" class="editor-hint hidden" style="text-align:center">还没有照片，用下面的按钮上传吧 ♥</p>
+          <button class="btn btn-wood btn-block" id="b-album-upload-btn" type="button">选择照片上传（可多选）</button>
+          <input type="file" id="b-album-file" accept="image/*" multiple hidden>
+          <p class="editor-hint" id="b-album-progress"></p>
+          <p class="editor-hint">显示在请柬「女方婚宴」模块顶部：左右滑动 + 自动轮播，点任意一张全屏看大图。留空则不显示照片。</p>
+        </div>
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">男方婚宴照片</h2>
+          <div class="photo-grid" id="g-album-grid"></div>
+          <p id="g-album-empty" class="editor-hint hidden" style="text-align:center">还没有照片，用下面的按钮上传吧 ♥</p>
+          <button class="btn btn-wood btn-block" id="g-album-upload-btn" type="button">选择照片上传（可多选）</button>
+          <input type="file" id="g-album-file" accept="image/*" multiple hidden>
+          <p class="editor-hint" id="g-album-progress"></p>
+          <p class="editor-hint">显示在请柬「男方婚宴」模块顶部：左右滑动 + 自动轮播，点任意一张全屏看大图。留空则不显示照片。</p>
+        </div>
+        <div class="panel editor-panel">
           <h2 class="editor-sub">轮播设置</h2>
           <div class="editor-switches">
             <label class="editor-switch"><input type="checkbox" id="gal-auto" checked><span>自动轮播</span></label>
@@ -249,6 +340,16 @@
         <button class="btn btn-primary btn-block editor-save" id="games-save" type="button">保 存</button>
       </section>
 
+      <!-- ⑥ 模块 -->
+      <section id="tab-modules" class="tab-page hidden">
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">模块顺序与开关</h2>
+          <div id="ed-modules"></div>
+          <p class="editor-hint">点「上移」「下移」调整模块在请柬上的先后顺序；取消勾选则该模块不显示。封面主视觉固定在最前、页脚固定最后，不参与排序。</p>
+        </div>
+        <button class="btn btn-primary btn-block editor-save" id="modules-save" type="button">保 存</button>
+      </section>
+
       <!-- ④ 看板 -->
       <section id="tab-board" class="tab-page hidden">
 
@@ -308,6 +409,6 @@
 
   <script src="assets/js/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="js/editor.js"></script>
+  <script src="js/editor.js?v=6"></script>
 </body>
 </html>

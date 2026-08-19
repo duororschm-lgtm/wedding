@@ -15,14 +15,16 @@ window.WEDDING_CONFIG = {
     brideNick: "小新娘"     // 故事对话里用的昵称
   },
 
-  /* ---------- 婚礼时间（倒计时、日历都按这个算） ---------- */
+  /* ---------- 婚礼时间（男方主宴，与下方 banquets.groom 同步） ----------
+     倒计时、月历、首页日期都按这个算；
+     女方婚宴的时间在 banquets.bride.date 里单独配。 */
   date: {
     year: 2026, month: 10, day: 1,     // 公历日期
     hour: 11, minute: 58,               // 开始时间（24 小时制）
     lunar: "农历八月廿一"               // 农历日期（可留空字符串 ""）
   },
 
-  /* ---------- 婚礼地点 ----------
+  /* ---------- 婚礼地点（男方主宴，与下方 banquets.groom 同步） ----------
      经度纬度用于「地图导航」按钮，怎么查坐标：
      打开 https://lbs.amap.com/tools/picker 搜索酒店名称，
      点击地图上的位置，复制右侧的「经度」「纬度」填到这里。
@@ -35,7 +37,7 @@ window.WEDDING_CONFIG = {
     notice: ""
   },
 
-  /* ---------- 今日行程（显示在婚礼信息里，可在编辑器改） ---------- */
+  /* ---------- 今日行程（旧结构的默认行程，新结构下行程归各婚宴，见 banquets） ---------- */
   schedule: [
     { time: "10:30", label: "签到", desc: "领取今日任务，与老朋友相见" },
     { time: "11:58", label: "仪式", desc: "见证拥抱、誓言与交换戒指" },
@@ -43,7 +45,69 @@ window.WEDDING_CONFIG = {
     { time: "13:30", label: "合影", desc: "保存这一份快乐存档" }
   ],
 
-  /* ---------- 交通指引（两张小卡片，可在编辑器改） ---------- */
+  /* ---------- 男女双方婚宴（女方婚宴 + 男方婚宴两个模块） ----------
+     date      该场婚宴的开席时间
+     venue     该场婚宴的地址（含 lng/lat 用于高德导航；photo 是山谷地图里的实景照片，留空用内置像素地图）
+     photos    该场模块顶部的婚宴相册照片（横滑+自动轮播+点开全屏；在编辑器「照片」页上传管理，留空则不显示）
+     schedule  该场自己的今日行程（两场流程不同，各写各的）
+     transport 该场自己的交通安排（男方会同步显示在山谷地图里）
+     info      该场的「完整婚礼信息」可展开块：on 是否显示，expanded 是否默认展开
+     countdown / calendar  该场是否显示倒计时 / 婚礼月历（"看情况添加"，都在这块里） */
+  banquets: {
+    groom: {
+      photos: ["assets/tpl/groom-photo.webp"],
+      schedule: [
+        { time: "11:00", label: "签到", desc: "领取今日任务，与老朋友相见" },
+        { time: "11:58", label: "仪式", desc: "见证拥抱、誓言与交换戒指" },
+        { time: "12:28", label: "喜宴", desc: "共享一场丰盛的喜宴" },
+        { time: "13:30", label: "合影", desc: "保存这一份快乐存档" }
+      ],
+      transport: { public: "地铁 XX 站下车后打车前往", car: "导航至酒店停车场" },
+      info: { on: true, expanded: false },
+      countdown: false, calendar: false
+    },
+    bride: {
+      photos: ["assets/tpl/bride-photo.webp"],
+      schedule: [
+        { time: "17:00", label: "签到", desc: "领取今日任务，与老朋友相见" },
+        { time: "17:58", label: "仪式", desc: "见证拥抱、誓言与交换戒指" },
+        { time: "18:28", label: "喜宴", desc: "共享一场丰盛的喜宴" },
+        { time: "19:30", label: "合影", desc: "保存这一份快乐存档" }
+      ],
+      transport: { public: "地铁 XX 站下车后打车前往", car: "导航至酒店停车场" },
+      info: { on: true, expanded: false },
+      countdown: false, calendar: false
+    }
+  },
+
+  /* ---------- 统一介绍模块（时间/倒计时/今日行程/月历）的子开关 ---------- */
+  intro: {
+    countdown: true,    // 是否显示倒计时
+    calendar: true      // 是否显示婚礼月历
+  },
+
+  /* ---------- 回执表单 ---------- */
+  rsvp: {
+    accommodation: true   // 是否询问宾客「需不需要住宿」（含入住/退房日期）
+  },
+
+  /* ---------- 模块顺序与开关（可在编辑器「模块」页改） ----------
+     数组顺序 = 请柬上从上到下的顺序；on: false 则该模块不显示。
+     封面主视觉固定在最前、页脚固定最后，不参与排序。 */
+  sections: [
+    { id: "quest",        on: true },
+    { id: "notice",       on: true },
+    { id: "notice-bride", on: true },
+    { id: "notice-groom", on: true },
+    { id: "ceremony",     on: true },
+    { id: "map",          on: true },
+    { id: "rsvp",         on: true },
+    { id: "guests",       on: true },
+    { id: "games",        on: true }
+  ],
+
+  /* ---------- 交通指引（旧结构的默认值；新结构下交通归各婚宴，见 banquets。
+     顶层这份始终 = 男方婚宴的副本，供「山谷地图」模块读取） ---------- */
   transport: {
     public: "地铁 XX 站下车后打车前往",
     car: "导航至酒店停车场"
@@ -169,4 +233,129 @@ window.WEDDING_CONFIG = {
     title: "杜晓宇 & 新娘名字 的婚礼请柬",
     desc: "诚邀您参加我们的婚礼，点开有惊喜 ♥"
   }
+};
+
+/* ============================================================
+   旧配置迁移 + 结构补全（main.js / editor.js 共用，勿删）
+   ============================================================ */
+
+/* 服务端旧结构（只有 date/venue/schedule，没有 banquets）→ 注入 banquets。
+   必须在 merge 之前调用：否则 config.js 的默认 banquets 会盖掉用户的旧数据。
+   旧的单套行程/交通作为起点复制给两场（男方=主宴含坐标），用户再各自改。 */
+window.migrateLegacyBanquets = function (serverData) {
+  if (!serverData || serverData.banquets) return serverData;
+  if (!serverData.date && !serverData.venue && !serverData.schedule) return serverData;
+  var copy = function (v) { return JSON.parse(JSON.stringify(v || {})); };
+  var v = serverData.venue || {};
+  serverData.banquets = {
+    groom: {
+      date: copy(serverData.date), venue: copy(serverData.venue),
+      schedule: copy(serverData.schedule), transport: copy(serverData.transport),
+      countdown: false, calendar: false
+    },
+    bride: {
+      date: copy(serverData.date),
+      venue: { name: v.name || '', address: v.address || '', notice: v.notice || '' },
+      schedule: copy(serverData.schedule), transport: copy(serverData.transport),
+      countdown: false, calendar: false
+    }
+  };
+  return serverData;
+};
+
+/* 结构补全：merge 之后调用。补齐两个婚宴的字段、把顶层 date/venue/transport 反向
+   同步为男方婚宴副本（hero 日期、山谷地图、日历 ICS 等旧代码继续可用）、补 intro/rsvp
+   默认值、按默认顺序补全 sections。 */
+window.normalizeWeddingConfig = function (C) {
+  C = C || {};
+  C.banquets = C.banquets || {};
+  var DEF = window.WEDDING_CONFIG || {};
+  var legacyDate = C.date || DEF.date || {};
+  var legacyVenue = C.venue || DEF.venue || {};
+  var legacySchedule = Array.isArray(C.schedule) ? C.schedule
+    : (Array.isArray(DEF.schedule) ? DEF.schedule : []);
+  var legacyTransport = C.transport || DEF.transport || {};
+
+  function fillDate(d) {
+    var out = {};
+    ['year', 'month', 'day', 'hour', 'minute', 'lunar'].forEach(function (k) {
+      var v = (d && d[k] != null) ? d[k] : (legacyDate[k] != null ? legacyDate[k] : '');
+      out[k] = v;
+    });
+    return out;
+  }
+  function fillVenue(v, withGeo) {
+    var out = {};
+    ['name', 'address', 'notice', 'photo'].forEach(function (k) {
+      out[k] = (v && v[k] != null) ? v[k] : (legacyVenue[k] != null ? legacyVenue[k] : '');
+    });
+    if (withGeo) {
+      out.lng = (v && v.lng != null) ? v.lng : (legacyVenue.lng != null ? legacyVenue.lng : 0);
+      out.lat = (v && v.lat != null) ? v.lat : (legacyVenue.lat != null ? legacyVenue.lat : 0);
+    }
+    return out;
+  }
+  function fillBanquet(b) {
+    if (!Array.isArray(b.schedule)) {
+      b.schedule = JSON.parse(JSON.stringify(legacySchedule));
+    }
+    b.transport = b.transport || {};
+    ['public', 'car'].forEach(function (k) {
+      if (b.transport[k] == null) b.transport[k] = legacyTransport[k] != null ? legacyTransport[k] : '';
+    });
+    b.info = b.info || {};
+    b.info.on = b.info.on !== false;
+    b.info.expanded = b.info.expanded === true;
+    /* 旧键 photo（单张字符串）→ 新键 photos（数组）：老数据自动迁移 */
+    if (!Array.isArray(b.photos)) b.photos = b.photo ? [b.photo] : [];
+    delete b.photo;
+    return b;
+  }
+
+  var g = C.banquets.groom || {};
+  g.date = fillDate(g.date);
+  g.venue = fillVenue(g.venue, true);
+  if (g.countdown == null) g.countdown = false;
+  if (g.calendar == null) g.calendar = false;
+  C.banquets.groom = fillBanquet(g);
+
+  var b = C.banquets.bride || {};
+  b.date = fillDate(b.date);
+  b.venue = fillVenue(b.venue, true);
+  if (b.countdown == null) b.countdown = false;
+  if (b.calendar == null) b.calendar = false;
+  C.banquets.bride = fillBanquet(b);
+
+  /* 反向同步：顶层 date/venue/transport = 男方婚宴副本（旧代码零改动继续用） */
+  C.date = fillDate(g.date);
+  C.venue = fillVenue(g.venue, true);
+  C.transport = { public: g.transport.public || '', car: g.transport.car || '' };
+  C.schedule = JSON.parse(JSON.stringify(g.schedule));
+
+  C.intro = C.intro || {};
+  if (C.intro.countdown == null) C.intro.countdown = true;
+  if (C.intro.calendar == null) C.intro.calendar = true;
+  C.rsvp = C.rsvp || {};
+  if (C.rsvp.accommodation == null) C.rsvp.accommodation = true;
+
+  /* sections：保序合并——已配的按配置顺序（去重取首个），缺失的按默认顺序补，未知 id 忽略 */
+  var defList = DEF.sections || [];
+  var defIds = {};
+  defList.forEach(function (e) { defIds[e.id] = e; });
+  var seen = {}, list = [];
+  (C.sections || []).forEach(function (e) {
+    if (e && e.id && defIds[e.id] && !seen[e.id]) {
+      seen[e.id] = true;
+      list.push({ id: e.id, on: e.on !== false });
+    }
+  });
+  defList.forEach(function (e) {
+    if (!seen[e.id]) {
+      seen[e.id] = true;
+      list.push({ id: e.id, on: e.on !== false });
+    }
+  });
+  C.sections = list;
+
+  return C;
 };

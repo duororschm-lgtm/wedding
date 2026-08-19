@@ -6,7 +6,7 @@
 """
 from PIL import Image, ImageFilter
 from collections import deque
-import os
+import os, sys
 
 SRC = os.path.join(os.path.dirname(__file__), '..', 'assets', 'bg')
 DST_CHAR = os.path.join(os.path.dirname(__file__), '..', 'assets', 'tpl', 'characters')
@@ -119,31 +119,51 @@ def soften_alpha(im):
     r, g, b, _ = im.split()
     return Image.merge('RGBA', (r, g, b, a))
 
+def make_banquet_photo(name, out, target_w=800):
+    """婚宴模块新人照：压宽转 webp（不像素化、不抠底，保留原照质感）。"""
+    im = load(name).convert('RGB')
+    w, h = im.size
+    h2 = max(1, int(h * target_w / w))
+    im = im.resize((target_w, h2), Image.LANCZOS)
+    im.save(out, quality=86)
+    print('saved', out, im.size)
+
 def main():
+    steps = set(sys.argv[1:]) if len(sys.argv) > 1 else set(['all'])
+    run = lambda k: 'all' in steps or k in steps
+
     # ① 新郎 / ② 新娘 / ③ 狐狸头像：保留原底 + 像素化
-    make_avatar('新郎.jfif', os.path.join(DST_CHAR, 'couple-groom.png'))
-    make_avatar('新娘.jfif', os.path.join(DST_CHAR, 'couple-bride.png'))
-    make_avatar('狐狸.jfif', os.path.join(DST_CHAR, 'mystery.png'))
+    if run('avatar'):
+        make_avatar('新郎.jfif', os.path.join(DST_CHAR, 'couple-groom.png'))
+        make_avatar('新娘.jfif', os.path.join(DST_CHAR, 'couple-bride.png'))
+        make_avatar('狐狸.jfif', os.path.join(DST_CHAR, 'mystery.png'))
 
     # ④ 狐狸装饰版（邀请函区）：范围抠图 + 小岛清理 + 像素化
-    fox = load('狐狸.jfif')
-    alpha = range_key(fox)
-    alpha = clean_small_islands(alpha)
-    fox.putalpha(alpha)
-    fox = crop_alpha(fox, margin=0.10)
-    fox = soften_alpha(fox)
-    fox = pixelate(fox, 180)
-    fox.save(os.path.join(DST_TPL, 'fox-deco.webp'), quality=92)
-    print('saved', os.path.join(DST_TPL, 'fox-deco.webp'), fox.size)
+    if run('deco'):
+        fox = load('狐狸.jfif')
+        alpha = range_key(fox)
+        alpha = clean_small_islands(alpha)
+        fox.putalpha(alpha)
+        fox = crop_alpha(fox, margin=0.10)
+        fox = soften_alpha(fox)
+        fox = pixelate(fox, 180)
+        fox.save(os.path.join(DST_TPL, 'fox-deco.webp'), quality=92)
+        print('saved', os.path.join(DST_TPL, 'fox-deco.webp'), fox.size)
 
     # ⑤ 合照 → 分享卡 cover.webp + 照片墙 pix/couple-photo.webp
-    couple = load('合照.jfif').convert('RGB')
-    cover = couple.resize((1200, 675), Image.LANCZOS)
-    cover.save(os.path.join(DST_TPL, 'cover.webp'), quality=88)
-    print('saved', os.path.join(DST_TPL, 'cover.webp'), cover.size)
-    photo = couple.resize((900, int(900 * couple.height / couple.width)), Image.LANCZOS)
-    photo.save(os.path.join(DST_PHOTO, 'couple-photo.webp'), quality=86)
-    print('saved', os.path.join(DST_PHOTO, 'couple-photo.webp'), photo.size)
+    if run('cover'):
+        couple = load('合照.jfif').convert('RGB')
+        cover = couple.resize((1200, 675), Image.LANCZOS)
+        cover.save(os.path.join(DST_TPL, 'cover.webp'), quality=88)
+        print('saved', os.path.join(DST_TPL, 'cover.webp'), cover.size)
+        photo = couple.resize((900, int(900 * couple.height / couple.width)), Image.LANCZOS)
+        photo.save(os.path.join(DST_PHOTO, 'couple-photo.webp'), quality=86)
+        print('saved', os.path.join(DST_PHOTO, 'couple-photo.webp'), photo.size)
+
+    # ⑥⑦ 婚宴模块新人照：女方=新娘全身、男方=新郎全身
+    if run('photo'):
+        make_banquet_photo('新娘全身.jfif', os.path.join(DST_TPL, 'bride-photo.webp'))
+        make_banquet_photo('新郎全身.jfif', os.path.join(DST_TPL, 'groom-photo.webp'))
 
 if __name__ == '__main__':
     main()
