@@ -385,6 +385,43 @@
       ]
     },
 
+    /* 绿叶 6×6（封面飘落用） */
+    leaf: {
+      palette: { G: P.grass, g: P.grassDark },
+      grid: [
+        '.GG...',
+        'GGGG..',
+        'GgGG..',
+        '.GgG..',
+        '..Gg..',
+        '...g..'
+      ]
+    },
+
+    /* 蝴蝶 9×5（俯视展开双翅；封面飞舞用） */
+    bfly: {
+      palette: { W: P.pink, G: P.gold, B: P.ink },
+      grid: [
+        '..WW.WW..',
+        '.WGWWWGW.',
+        'WWWWBWWWW',
+        '.WW.B.WW.',
+        '..W...W..'
+      ]
+    },
+
+    /* 黄蝶 9×5（同形状，换黄翅） */
+    bflyY: {
+      palette: { W: P.straw, G: P.strawDark, B: P.ink },
+      grid: [
+        '..WW.WW..',
+        '.WGWWWGW.',
+        'WWWWBWWWW',
+        '.WW.B.WW.',
+        '..W...W..'
+      ]
+    },
+
     /* ---------- 原创山谷元素（交通/动物/礼物） ---------- */
 
     /* 巴士 16×9（公共交通） */

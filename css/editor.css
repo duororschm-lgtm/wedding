@@ -289,3 +289,38 @@
   transform: none;
 }
 .mod-label { flex: 1; }
+
+
+/* —— 封面标题实时预览（模仿请柬封面：图 + 顶部渐暗遮罩 + 三层文字） —— */
+#ed-title-preview {
+  position: relative; width: 180px; height: 320px; overflow: hidden;
+  border: 3px solid #4a2f1d; border-radius: 6px;
+  margin: 14px auto 12px; background: #10163f;
+}
+#ed-title-preview .tp-bg {
+  position: absolute; inset: 0;
+  background: url(../assets/tpl/hero-garden.webp) center / 100% 100% no-repeat;
+  opacity: .92;
+}
+#ed-title-preview::after {
+  content: ''; position: absolute; inset: 0 0 auto; height: 46%;
+  background: linear-gradient(to bottom, rgba(18,9,2,.62) 0%, rgba(18,9,2,.42) 26%, rgba(18,9,2,.22) 52%, transparent 100%);
+  pointer-events: none;
+}
+#ed-title-preview .tp-copy {
+  position: absolute; left: 0; right: 0; top: 30%;
+  transform: translateY(-35%);
+  text-align: center; z-index: 2;
+}
+#ed-title-preview .tp-eyebrow { margin: 0 0 6px; font-weight: 900; letter-spacing: .18em; }
+#ed-title-preview .tp-title { margin: 0 auto 8px; font-weight: 900; white-space: nowrap; }
+#ed-title-preview .tp-date { margin: 0; font-weight: 900; letter-spacing: .22em; }
+
+#ed-title-preview .tp-btn {
+  position: absolute; left: 50%; top: 92%;
+  transform: translate(-50%, -50%);
+  z-index: 3; padding: 2px 5px 1px;
+  border: 2px solid #5b3a1a; color: #fff3c0; background: #8a5a2b;
+  box-shadow: inset 0 0 0 1px #d6aa67, 2px 2px #2a1a08;
+  font-size: 8px; font-weight: 900; white-space: nowrap;
+}

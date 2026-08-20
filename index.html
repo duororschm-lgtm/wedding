@@ -10,7 +10,8 @@
   <meta property="og:title" content="我们的婚礼请柬">
   <meta property="og:description" content="诚邀您参加我们的婚礼，点开有惊喜 ♥">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=23">
+  <link rel="preload" as="image" href="assets/tpl/hero-garden.webp">
 </head>
 <body>
 
@@ -26,17 +27,16 @@
   <!-- ============ 请柬正文 ============ -->
   <main id="invitation" aria-hidden="true">
 
-    <!-- 主视觉（模板第一页式：夜空渐变 + 月亮 + 星光 + 金色大字 + 山景） -->
+    <!-- 主视觉（花园封面：AI 混搭插画 + 蝴蝶/爱心/绿叶粒子 + Ken Burns 慢缩放） -->
     <header id="hero">
       <div id="hero-scene" aria-hidden="true"></div>
       <div class="hero-copy">
         <p class="eyebrow reveal" id="hero-save"></p>
-        <h1 class="game-title reveal"><span>WEDDING</span></h1>
-        <p class="hero-cn reveal"><span id="name-groom"></span> × <span id="name-bride"></span></p>
+        <h1 class="game-title reveal"><span id="name-groom"></span> × <span id="name-bride"></span></h1>
         <p class="hero-date reveal" id="hero-date"></p>
         <p class="hero-guest reveal" id="hero-guest" hidden></p>
       </div>
-      <button class="scroll-hint" id="hero-scroll-btn" type="button">点击开启邀请函<b>↓</b></button>
+      <button class="scroll-hint" id="hero-scroll-btn" type="button"><b>↓</b>点击开启邀请函<b>↓</b></button>
     </header>
 
     <!-- 任务卡：参加我们的婚礼 -->
@@ -496,6 +496,6 @@
   <script src="assets/js/supabase.min.js"></script>
   <script src="config.js"></script>
   <script src="js/pixelart.js?v=6"></script>
-  <script src="js/main.js?v=11"></script>
+  <script src="js/main.js?v=29"></script>
 </body>
 </html>

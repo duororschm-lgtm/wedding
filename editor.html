@@ -6,7 +6,7 @@
   <title>内容管理 · 婚礼后台</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%207%206'%20shape-rendering='crispEdges'%3E%3Crect%20x='1'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='4'%20y='0'%20width='2'%20height='1'%20fill='%23ff8fa5'/%3E%3Crect%20x='0'%20y='1'%20width='7'%20height='2'%20fill='%23e85d75'/%3E%3Crect%20x='1'%20y='3'%20width='5'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='2'%20y='4'%20width='3'%20height='1'%20fill='%23e85d75'/%3E%3Crect%20x='3'%20y='5'%20width='1'%20height='1'%20fill='%23e85d75'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css?v=11">
-  <link rel="stylesheet" href="css/editor.css?v=4">
+  <link rel="stylesheet" href="css/editor.css?v=6">
 </head>
 <body class="admin-body">
 
@@ -60,6 +60,74 @@
             <div class="field"><label for="ed-bride-nick">新娘昵称</label><input type="text" id="ed-bride-nick" maxlength="20"></div>
           </div>
           <p class="editor-hint">昵称用于故事对话：对话里写「晓宇」「小新娘」会自动换成昵称。</p>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">外观主题</h2>
+          <p class="editor-hint">白天 / 黑夜 / 自动；「自动」= 18 点后到 6 点进入夜景。</p>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-theme">主题模式</label>
+              <select id="ed-theme">
+                <option value="auto">自动（18 点后夜景）</option>
+                <option value="day">白天</option>
+                <option value="night">黑夜</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel editor-panel">
+          <h2 class="editor-sub">封面标题（张宇 × 赵熙雅）</h2>
+          <p class="editor-hint">上方小样即封面文字实时预览：颜色、字号、字体、描边、字距、位置改完立刻变，保存后请柬同步。</p>
+          <div class="editor-title-preview" id="ed-title-preview">
+            <div class="tp-bg"></div>
+            <div class="tp-copy" id="tp-copy">
+              <p class="tp-eyebrow" id="tp-eyebrow">SAVE THE DATE</p>
+              <p class="tp-title" id="tp-title">张宇 × 赵熙雅</p>
+              <p class="tp-date" id="tp-date">2026.9.12</p>
+            </div>
+            <div class="tp-btn" id="tp-btn">↓ 点击开启邀请函 ↓</div>
+          </div>
+          <div class="editor-grid editor-grid-3">
+            <div class="field"><label for="ed-tt-text">标题文字（留空=新郎 × 新娘）</label><input type="text" id="ed-tt-text" maxlength="30" placeholder="张宇 × 赵熙雅"></div>
+            <div class="field"><label for="ed-tt-eyebrow">眉题文字（留空=SAVE THE DATE）</label><input type="text" id="ed-tt-eyebrow" maxlength="30" placeholder="SAVE THE DATE"></div>
+            <div class="field"><label for="ed-tt-date">日期文字（留空=婚礼日期）</label><input type="text" id="ed-tt-date" maxlength="30" placeholder="2026.9.12"></div>
+          </div>
+          <div class="editor-grid editor-grid-4">
+            <div class="field"><label for="ed-tt-color">文字颜色</label><input type="color" id="ed-tt-color"></div>
+            <div class="field"><label for="ed-tt-edge">金边色</label><input type="color" id="ed-tt-edge"></div>
+            <div class="field"><label for="ed-tt-outline">棕边色</label><input type="color" id="ed-tt-outline"></div>
+            <div class="field"><label for="ed-tt-shadow">阴影色</label><input type="color" id="ed-tt-shadow"></div>
+          </div>
+          <div class="editor-grid editor-grid-4">
+            <div class="field"><label for="ed-tt-size">字号 px（12-60）</label><input type="number" id="ed-tt-size" min="12" max="60" step="1"></div>
+            <div class="field"><label for="ed-tt-font">字体</label>
+              <select id="ed-tt-font">
+                <option value="pixel">像素体 Fusion Pixel</option>
+                <option value="hei">黑体</option>
+                <option value="system">系统默认</option>
+              </select>
+            </div>
+            <div class="field"><label for="ed-tt-stroke">描边厚度</label>
+              <select id="ed-tt-stroke">
+                <option value="1">细</option>
+                <option value="2">标准</option>
+                <option value="3">粗</option>
+              </select>
+            </div>
+            <div class="field"><label for="ed-tt-ls">字距 em（0-0.3）</label><input type="number" id="ed-tt-ls" min="0" max="0.3" step="0.01"></div>
+          </div>
+          <div class="field"><label for="ed-tt-y">标题位置（相对整张封面图 %，10 靠上 / 60 靠下，默认 30）</label><input type="range" id="ed-tt-y" min="10" max="60" step="1"></div>
+          <div class="field"><label for="ed-tt-btnY">打卡按钮位置（相对整张封面图 %，默认 92）</label><input type="range" id="ed-tt-btnY" min="50" max="98" step="1"></div>
+          <div class="editor-grid">
+            <div class="field"><label for="ed-cover-url">封面图片（留空=内置封面；可上传）</label><input type="text" id="ed-cover-url" placeholder="https://… 或留空"></div>
+          </div>
+          <div class="editor-upload-row">
+            <button class="btn btn-wood" id="ed-cover-upload-btn" type="button">上传封面图</button>
+            <input type="file" id="ed-cover-file" accept="image/*" hidden>
+            <span id="ed-cover-progress"></span>
+          </div>
+          <p class="editor-hint">封面图建议竖图（约 1550×2754 比例），上传后点「保存」生效，请柬封面与上方预览同步更换。</p>
         </div>
 
         <div class="panel editor-panel">
@@ -409,6 +477,6 @@
 
   <script src="assets/js/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="js/editor.js?v=6"></script>
+  <script src="js/editor.js?v=9"></script>
 </body>
 </html>

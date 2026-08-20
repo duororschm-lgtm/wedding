@@ -187,6 +187,123 @@
   });
 
   /* ============================================================
+     ⓪ 封面标题（张宇 × 赵熙雅）：自定义 + 实时预览
+     ============================================================ */
+  function pxShadowE(color, px) {
+    return [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]
+      .map(function (d) { return (d[0] * px) + 'px ' + (d[1] * px) + 'px 0 ' + color; })
+      .join(', ');
+  }
+  function collectTitleForm() {
+    return {
+      text: ($('#ed-tt-text').value || '').trim(),
+      eyebrow: ($('#ed-tt-eyebrow').value || '').trim(),
+      date: ($('#ed-tt-date').value || '').trim(),
+      size: Math.min(60, Math.max(12, +($('#ed-tt-size').value) || 24)),
+      color: $('#ed-tt-color').value || '#fff3c4',
+      edge: $('#ed-tt-edge').value || '#e8c86a',
+      outline: $('#ed-tt-outline').value || '#3d2b1a',
+      shadow: $('#ed-tt-shadow').value || '#2a1a08',
+      stroke: +$('#ed-tt-stroke').value || 2,
+      font: $('#ed-tt-font').value || 'pixel',
+      letterSpacing: Math.min(0.3, Math.max(0, +($('#ed-tt-ls').value) || 0.04)),
+      y: Math.min(60, Math.max(10, +($('#ed-tt-y').value) || 30)),
+      btnY: Math.min(98, Math.max(50, +($('#ed-tt-btnY').value) || 92))
+    };
+  }
+  var titlePreviewBound = false;
+  /* 预览框是整图竖版（宽 180 = 手机壳宽 390 的 0.4615），文字/阴影按同比例缩放 */
+  var TP_SF = 180 / 390;
+  function updateTitlePreview() {
+    var t = collectTitleForm();
+    var st = [1, 2, 3].indexOf(+t.stroke) >= 0 ? +t.stroke : 2;
+    var edgePx = [1, 1, 2][st - 1];
+    var outPx = [2, 2, 3][st - 1];
+    var shPx = [3, 3, 5][st - 1];
+    var shPx2 = [0, 4, 6][st - 1];
+    var FONTS = {
+      pixel: '"Fusion Pixel", Impact, "Arial Black", sans-serif',
+      hei: '"Microsoft YaHei", "PingFang SC", sans-serif',
+      system: 'sans-serif'
+    };
+    var size = Math.max(8, Math.round(t.size * TP_SF));
+    var sh = Math.max(1, Math.round(shPx * TP_SF));
+    var ts = pxShadowE(t.edge, Math.max(1, Math.round(edgePx * TP_SF))) + ', ' +
+      pxShadowE(t.outline, Math.max(1, Math.round(outPx * TP_SF))) +
+      ', ' + sh + 'px ' + sh + 'px 0 ' + t.shadow +
+      (shPx2 ? ', ' + Math.max(1, Math.round(shPx2 * TP_SF)) + 'px ' + Math.max(1, Math.round(shPx2 * TP_SF)) + 'px 0 ' + t.shadow : '');
+    var title = $('#tp-title'), date = $('#tp-date'), eyebrow = $('#tp-eyebrow');
+    title.style.cssText = 'font-size:' + size + 'px;font-family:' + (FONTS[t.font] || FONTS.pixel) +
+      ';letter-spacing:' + (t.letterSpacing * TP_SF).toFixed(3) + 'em;color:' + t.color + ';text-shadow:' + ts + ';';
+    var small = 'font-size:' + Math.max(6, Math.round(size / 2)) + 'px;color:' + t.color +
+      ';text-shadow:' + pxShadowE(t.edge, 1) + ', ' + pxShadowE(t.outline, 1) +
+      ', ' + Math.max(1, sh - 1) + 'px ' + Math.max(1, sh - 1) + 'px 0 ' + t.shadow + ';';
+    date.style.cssText = small;
+    eyebrow.style.cssText = small;
+    $('#tp-copy').style.top = t.y + '%';
+    $('#tp-btn').style.top = t.btnY + '%';
+    /* 预览文字：自定义优先，否则自动取新郎新娘/日期 */
+    var g = ($('#ed-groom').value || '张宇').trim();
+    var b = ($('#ed-bride').value || '赵熙雅').trim();
+    title.textContent = t.text || (g + ' × ' + b);
+    eyebrow.textContent = t.eyebrow || 'SAVE THE DATE';
+    var y = $('#ed-g-year').value || '2026';
+    var m = $('#ed-g-month').value || '9';
+    var d = $('#ed-g-day').value || '12';
+    date.textContent = t.date || (y + '.' + m + '.' + d);
+    /* 封面图跟随输入框 */
+    var url = ($('#ed-cover-url').value || '').trim();
+    $('#ed-title-preview').querySelector('.tp-bg').style.backgroundImage =
+      url ? 'url("' + url + '")' : '';
+  }
+  function bindTitlePreview() {
+    if (titlePreviewBound) return;
+    titlePreviewBound = true;
+    ['#ed-tt-color', '#ed-tt-edge', '#ed-tt-outline', '#ed-tt-shadow', '#ed-tt-size',
+     '#ed-tt-font', '#ed-tt-stroke', '#ed-tt-ls', '#ed-tt-y', '#ed-tt-btnY',
+     '#ed-tt-text', '#ed-tt-eyebrow', '#ed-tt-date', '#ed-cover-url',
+     '#ed-groom', '#ed-bride', '#ed-g-year', '#ed-g-month', '#ed-g-day'].forEach(function (sel) {
+      var el = $(sel);
+      if (el) el.addEventListener('input', updateTitlePreview);
+    });
+  }
+
+  /* ---------- 封面图片上传（storage 桶 photos，path cover/…，不进照片墙列表） ---------- */
+  var coverUploading = false;
+  function bindCoverUpload() {
+    $('#ed-cover-upload-btn').addEventListener('click', function () { $('#ed-cover-file').click(); });
+    $('#ed-cover-file').addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      this.value = '';
+      if (!file) return;
+      if (coverUploading) { toast('正在处理中，请稍等'); return; }
+      coverUploading = true;
+      var btn = $('#ed-cover-upload-btn');
+      var prog = $('#ed-cover-progress');
+      btn.disabled = true;
+      prog.textContent = '正在上传：' + file.name;
+      var path = 'cover/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) +
+        (file.name.indexOf('.') >= 0 ? file.name.slice(file.name.lastIndexOf('.')) : '.jpg');
+      supabase.storage.from('photos').upload(path, file, {
+        cacheControl: '3600',
+        contentType: file.type || 'image/jpeg'
+      }).then(function (r) {
+        if (r.error) throw new Error(r.error.message);
+        var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
+        $('#ed-cover-url').value = url;
+        updateTitlePreview();
+        toast('封面图已上传，记得点「保存」生效');
+      }).catch(function (e) {
+        toast('上传失败：' + e.message + '（photos 桶建好了吗？）');
+      }).then(function () {
+        coverUploading = false;
+        btn.disabled = false;
+        prog.textContent = '';
+      });
+    });
+  }
+
+  /* ============================================================
      ① 内容：从 site_settings 读配置，填表单，保存回数据库
      ============================================================ */
   var contentLoaded = false;
@@ -230,6 +347,27 @@
     $('#ed-bride').value = c.bride || '';
     $('#ed-groom-nick').value = c.groomNick || '';
     $('#ed-bride-nick').value = c.brideNick || '';
+    /* 外观主题：白天/黑夜/自动 */
+    $('#ed-theme').value = data.theme || 'auto';
+    /* 封面标题：颜色/字号/字体/描边/字距/位置 */
+    var ht = data.heroTitle || {};
+    $('#ed-tt-color').value = ht.color || '#fff3c4';
+    $('#ed-tt-edge').value = ht.edge || '#e8c86a';
+    $('#ed-tt-outline').value = ht.outline || '#3d2b1a';
+    $('#ed-tt-shadow').value = ht.shadow || '#2a1a08';
+    $('#ed-tt-size').value = ht.size || 24;
+    $('#ed-tt-font').value = ht.font || 'pixel';
+    $('#ed-tt-stroke').value = ht.stroke || 2;
+    $('#ed-tt-ls').value = ht.letterSpacing != null ? ht.letterSpacing : 0.04;
+    $('#ed-tt-y').value = ht.y || 30;
+    $('#ed-tt-btnY').value = ht.btnY || 92;
+    $('#ed-tt-text').value = ht.text || '';
+    $('#ed-tt-eyebrow').value = ht.eyebrow || '';
+    $('#ed-tt-date').value = ht.date || '';
+    $('#ed-cover-url').value = data.heroCover || '';
+    bindTitlePreview();
+    bindCoverUpload();
+    updateTitlePreview();
     /* 统一介绍：倒计时/月历（默认开）；行程归各婚宴自己配 */
     $('#ed-i-countdown').checked = intro.countdown !== false;
     $('#ed-i-calendar').checked = intro.calendar !== false;
@@ -417,6 +555,9 @@
           calendar: cb('#ed-b-calendar')
         }
       },
+      theme: $('#ed-theme').value.trim() || 'auto',
+      heroTitle: collectTitleForm(),
+      heroCover: ($('#ed-cover-url').value || '').trim(),
       intro: {
         countdown: cb('#ed-i-countdown'),
         calendar: cb('#ed-i-calendar')

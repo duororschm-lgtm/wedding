@@ -217,12 +217,97 @@
     var lunarStr = C.date.lunar ? '（' + C.date.lunar + '）' : '';
     var weekChar = '日一二三四五六'.charAt(new Date(C.date.year || 2026, (C.date.month || 1) - 1, C.date.day || 1).getDay());
 
-    /* 夜间主题：18 点后到早上 6 点自动夜色 */
-    var isNight = (function () {
+    /* 主题：白天/黑夜/自动（编辑器可配；自动=18 点后到 6 点夜景，非法值回退自动） */
+    var theme = (C.theme === 'day' || C.theme === 'night') ? C.theme : 'auto';
+    var isNight = theme === 'night' || (theme === 'auto' && (function () {
       var h = new Date().getHours();
       return h >= 18 || h < 6;
-    })();
+    })());
     if (isNight) document.body.classList.add('night');
+
+    /* ---------- 封面标题模块（张宇 × 赵熙雅）：颜色/字号/字体/描边/位置全可配 ---------- */
+    function pxShadow(color, px) {
+      /* 8 向硬像素描边 */
+      return [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]]
+        .map(function (d) { return (d[0] * px) + 'px ' + (d[1] * px) + 'px 0 ' + color; })
+        .join(', ');
+    }
+    function applyHeroTitle(t) {
+      t = t || {};
+      var title = $('.game-title'), date = $('.hero-date'), eyebrow = $('.eyebrow'), copy = $('.hero-copy');
+      if (!title || !copy) return;
+      var size = Math.min(60, Math.max(12, +t.size || 24));
+      var color = t.color || '#fff3c4';
+      var edge = t.edge || '#e8c86a';
+      var outline = t.outline || '#3d2b1a';
+      var shadow = t.shadow || '#2a1a08';
+      var st = [1, 2, 3].indexOf(+t.stroke) >= 0 ? +t.stroke : 2;
+      var edgePx = [1, 1, 2][st - 1];
+      var outPx = [2, 2, 3][st - 1];
+      var shPx = [3, 3, 5][st - 1];
+      var shPx2 = [0, 4, 6][st - 1]; /* 第二层半透明阴影，0=无 */
+      var FONTS = {
+        pixel: '"Fusion Pixel", Impact, "Arial Black", sans-serif',
+        hei: '"Microsoft YaHei", "PingFang SC", sans-serif',
+        system: 'sans-serif'
+      };
+      var family = FONTS[t.font] || FONTS.pixel;
+      var ls = t.letterSpacing != null ? +t.letterSpacing : 0.04;
+
+      var ts = pxShadow(edge, edgePx) + ', ' + pxShadow(outline, outPx) +
+        ', ' + shPx + 'px ' + shPx + 'px 0 ' + shadow +
+        (shPx2 ? ', ' + shPx2 + 'px ' + shPx2 + 'px 0 ' + shadow : '');
+      title.style.cssText += ';font-size:' + size + 'px;font-family:' + family +
+        ';letter-spacing:' + ls + 'em;color:' + color + ';text-shadow:' + ts + ';';
+      /* 标题文字自定义：留空=新郎 × 新娘 */
+      if (t.text) title.textContent = t.text;
+      if (date) {
+        date.style.cssText += ';font-size:' + Math.round(size / 2) + 'px;color:' + color +
+          ';text-shadow:' + pxShadow(edge, 1) + ', ' + pxShadow(outline, 1) +
+          ', ' + Math.max(2, shPx - 1) + 'px ' + Math.max(2, shPx - 1) + 'px 0 ' + shadow + ';';
+        if (t.date) date.textContent = t.date;
+      }
+      if (eyebrow) {
+        eyebrow.style.cssText += ';font-size:' + Math.round(size / 2) + 'px;color:' + color +
+          ';text-shadow:' + pxShadow(edge, 1) + ', ' + pxShadow(outline, 1) +
+          ', ' + Math.max(2, shPx - 1) + 'px ' + Math.max(2, shPx - 1) + 'px 0 ' + shadow + ';';
+        if (t.eyebrow) eyebrow.textContent = t.eyebrow;
+      }
+    }
+
+    /* ---------- 封面元素相对「整张封面图」定位 ----------
+       y% 都是图内百分比：标题中线 y%、按钮中心 btnY%；
+       按 img 的 object-fit/object-position 把图内坐标换算成屏幕坐标，
+       任何窗口尺寸/取景下标题和按钮都钉在图的同一位置 */
+    function layoutHeroCover(t) {
+      t = t || {};
+      var bg = $('#hero-scene .hero-mountains img');
+      var copy = $('.hero-copy');
+      var btn = $('#hero-scroll-btn');
+      if (!bg || !copy || !btn || !bg.naturalWidth) return;
+      var r = bg.getBoundingClientRect();
+      var scale = Math.max(r.width / bg.naturalWidth, r.height / bg.naturalHeight);
+      var op = getComputedStyle(bg).objectPosition.split(' ');
+      var opY = (parseFloat(op[1]) || 40) / 100;
+      var innerTop = (bg.naturalHeight * scale - r.height) * opY; /* 图内取景顶（屏幕像素） */
+      var heroH = $('#hero').offsetHeight;
+      var heroTop = $('#hero').getBoundingClientRect().top;
+      var yPct = Math.min(60, Math.max(5, +t.y || 30));
+      var btnPct = Math.min(98, Math.max(50, +t.btnY || 92));
+
+      /* 标题：中线对齐图内 y%。
+         CSS 的 transform:translateY(-35%) 恰好把中线校到 copy 顶部（0.35≈标题中线偏移），
+         所以这里直接把 copy 顶放到目标 y 即可 */
+      var titleMidY = heroTop + (yPct / 100) * bg.naturalHeight * scale - innerTop;
+      copy.style.top = Math.max(8, Math.round(titleMidY)) + 'px';
+
+      /* 按钮：中心对齐图内 btnY% */
+      var btnH = btn.offsetHeight;
+      var btnMidY = heroTop + (btnPct / 100) * bg.naturalHeight * scale - innerTop;
+      var bottom = heroH - btnMidY - btnH / 2;
+      btn.style.bottom = Math.max(6, Math.round(bottom)) + 'px';
+    }
+    applyHeroTitle(C.heroTitle); /* 自定义文字/样式先于 fillStatic 应用；fillStatic 对 name/date/eyebrow 有防覆盖守卫 */
 
     /* ============================================================
        一、填充静态文字 + 图标
@@ -246,12 +331,15 @@
       document.title = title;
       var og = document.querySelector('meta[property="og:title"]');
       if (og) og.setAttribute('content', title);
-      $('#name-groom').textContent = groom;
-      $('#name-bride').textContent = bride;
+      if ($('#name-groom')) $('#name-groom').textContent = groom;
+      if ($('#name-bride')) $('#name-bride').textContent = bride;
       $('#foot-groom').textContent = groom;
       $('#foot-bride').textContent = bride;
-      $('#hero-date').textContent = dateStr.replace(/\./g, ' · ');
-      $('#hero-save').textContent = 'SAVE THE DATE';
+      /* 封面日期按样图：2026.9.12 圆点分割（无前导零）；自定义 heroTitle.date 时跳过 */
+      if (!C.heroTitle || !C.heroTitle.date) {
+        $('#hero-date').textContent = (C.date.year || 2026) + '.' + (C.date.month || 1) + '.' + (C.date.day || 1);
+      }
+      if (!C.heroTitle || !C.heroTitle.eyebrow) $('#hero-save').textContent = 'SAVE THE DATE';
       $('#info-date').textContent = dateLine(C.date, weekChar);
       $('#foot-date').textContent = dateStr + lunarStr;
 
@@ -650,20 +738,62 @@
     })();
 
     /* ============================================================
-       四、主视觉场景（模板第一页式：山景 + 星光）
+       四、主视觉场景（模板式封面：天空文字 + 底部锚定封面2插画 + 蝴蝶/爱心/绿叶粒子）
        ============================================================ */
     function buildHero() {
       var scene = $('#hero-scene');
 
-      /* 远山（模板 hero-mountains 山景图，顶部渐隐融入天空） */
-      var hills = makeDiv('hills');
-      var hillsImg = document.createElement('img');
-      hillsImg.src = 'assets/tpl/hero-mountains.webp';
-      hillsImg.alt = '';
-      hillsImg.onerror = function () { hills.style.display = 'none'; };
-      hills.appendChild(hillsImg);
+      /* 封面图（默认 assets/tpl/hero-garden.webp，编辑器可上传自定义封面 heroCover） */
+      var bgWrap = makeDiv('hero-mountains');
+      var bgImg = document.createElement('img');
+      bgImg.alt = '';
+      bgImg.onerror = function () {
+        /* 自定义封面挂了 → 回退内置封面；内置也挂 → 隐藏 */
+        if (C.heroCover && bgImg.src.indexOf('hero-garden') < 0) {
+          bgImg.src = 'assets/tpl/hero-garden.webp';
+        } else {
+          bgWrap.style.display = 'none';
+        }
+      };
+      bgImg.onload = function () { layoutHeroCover(C.heroTitle); };
+      bgImg.src = C.heroCover || 'assets/tpl/hero-garden.webp';
+      bgWrap.appendChild(bgImg);
+      scene.appendChild(bgWrap);
+      /* 缓存命中时 onload 可能不触发，补一次直接定位 */
+      layoutHeroCover(C.heroTitle);
+      /* 任何窗口尺寸变化下，标题/按钮都重新钉回图内同一位置 */
+      window.addEventListener('resize', function () { layoutHeroCover(C.heroTitle); });
 
-      /* 闪烁星光 */
+      /* 蝴蝶 ×3（粉/黄/粉：外层漂移轨迹 + 内层扇翅；避开中间文字带） */
+      [['bfly', 4, '86%', '20%'], ['bflyY', 3, '11%', '25%'], ['bfly', 3, '80%', '9%']].forEach(function (b, i) {
+        var wrap = makeDiv('bfly d' + ((i % 3) + 1));
+        wrap.style.left = b[2];
+        wrap.style.top = b[3];
+        wrap.appendChild(PixelArt.sprite(b[0], b[1]));
+        scene.appendChild(wrap);
+      });
+
+      /* 爱心上飘 ×5（从新人位置附近升起） */
+      for (var h = 0; h < 5; h++) {
+        var hw = makeDiv('heart-rise');
+        hw.style.left = (38 + (h * 13) % 24) + '%';
+        hw.style.animationDelay = (h * 1.7) + 's';
+        hw.style.animationDuration = (7 + (h * 29) % 4) + 's';
+        hw.appendChild(PixelArt.sprite('heart', h % 2 ? 3 : 4));
+        scene.appendChild(hw);
+      }
+
+      /* 绿叶飘落 ×6（复用花瓣雨落态） */
+      for (var l = 0; l < 6; l++) {
+        var lf = makeDiv('leaf-fall');
+        lf.style.left = ((l * 71 + 9) % 100) + '%';
+        lf.style.animationDelay = (l * 1.3 % 8).toFixed(1) + 's';
+        lf.style.animationDuration = (7 + (l * 31) % 5).toFixed(1) + 's';
+        lf.appendChild(PixelArt.sprite('leaf', 3));
+        scene.appendChild(lf);
+      }
+
+      /* 闪烁星光（白天隐藏，夜间主题显示在封面上方） */
       var stars = makeDiv('sky-stars');
       for (var s = 0; s < 26; s++) {
         var star = document.createElement('i');
@@ -673,8 +803,6 @@
         star.style.animationDelay = ((s * 0.7) % 4).toFixed(1) + 's';
         stars.appendChild(star);
       }
-
-      scene.appendChild(hills);
       scene.appendChild(stars);
 
       /* 点击开启邀请函 → 滚到第一个可见模块（模块顺序可在编辑器自定义） */
@@ -698,10 +826,10 @@
       });
     }
 
-    /* ---------- 视差：滚动时山景层微移 ---------- */
+    /* ---------- 视差：滚动时封面图微移 ---------- */
     function buildParallax() {
       var layers = [
-        [$('#hero-scene .hills'), 0.04]
+        [$('#hero-scene .hero-mountains'), 0.04]
       ].filter(function (l) { return l[0]; });
       var heroH = function () { return $('#hero').offsetHeight; };
       var ticking = false;
@@ -722,6 +850,10 @@
         requestAnimationFrame(update);
       }, { passive: true });
     }
+
+    /* ---------- 封面布局 ----------
+       模板式固定布局（CSS 全权负责）：文字顶部天空、图片锚底、按钮贴底；
+       不再需要 JS 动态定位 */
 
     /* ============================================================
        五、故事对话（打字机效果；专属邀请自动带上宾客名字）

@@ -335,81 +335,168 @@ body.night .notice-flowers svg { filter: brightness(0.75); }
 #music-toggle[hidden] { display: none; }
 
 /* ============================================================
-   主视觉 Hero（模板第一页式）
+   主视觉 Hero（花园封面：AI 混搭插画 + 蝴蝶/爱心/绿叶 + Ken Burns）
    ============================================================ */
 
 #hero {
   position: relative;
-  min-height: 100svh;
-  padding: max(64px, 9svh) 24px 118px;
+  /* 480px 壳内全幅封面：整图铺满 hero，无天空底 */
+  min-height: min(100svh, calc(100vw * 1.7761)); /* 窄屏=原图比例整幅；宽屏不超过视口 */
+  padding: max(52px, 7svh) 24px 22px;
   overflow: hidden;
   isolation: isolate;
   text-align: center;
   color: #fff5ce;
 }
-
-/* 夜空棋盘暗纹（上半渐隐） */
-#hero::before {
-  content: ''; position: absolute; z-index: 0; inset: 0; opacity: .2;
-  background:
-    linear-gradient(45deg, #fff 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(-45deg, #fff 25%, transparent 25%) 0 0 / 12px 12px;
-  -webkit-mask-image: linear-gradient(#000 0 36%, #000b 44%, transparent 63%);
-  mask-image: linear-gradient(#000 0 36%, #000b 44%, transparent 63%);
-}
-
-/* 月亮（右上角） */
+/* 顶部渐暗遮罩：压在封面图上，让树冠区的名字/日期与背景拉开对比度 */
 #hero::after {
-  content: ''; position: absolute; z-index: 1; top: 44px; right: 38px;
-  width: 58px; height: 58px; border-radius: 50%;
-  background: #fff0ad; box-shadow: 0 0 0 4px #e4cf8a, 0 0 25px #fff2a880;
+  content: ''; position: absolute; z-index: 1; inset: 0 0 auto;
+  height: 46%;
+  background: linear-gradient(to bottom, rgba(18, 9, 2, .62) 0%, rgba(18, 9, 2, .42) 26%, rgba(18, 9, 2, .22) 52%, transparent 100%);
+  pointer-events: none;
+}
+/* 桌面：整图铺满视口高度（壳 480 定宽 + 视口高度 cover，只裁两侧少量） */
+@media (min-width: 521px) {
+  #hero { min-height: min(100svh, 900px); }
 }
 
-#hero-scene { position: absolute; z-index: 0; inset: 0; pointer-events: none; }
+#hero-scene { position: absolute; z-index: 1; inset: 0; pointer-events: none; }
 
-.hero-copy { position: relative; z-index: 4; text-align: center; }
-.eyebrow { margin: 0 0 10px; color: #ffe2a0; font-size: 12px; letter-spacing: .18em; text-shadow: 2px 2px #395080; }
+/* 封面图（assets/bg/封面2）：铺满 hero，随壳宽缩放、不放大 */
+.hero-mountains {
+  position: absolute; z-index: 1; inset: 0;
+  will-change: transform;
+}
+.hero-mountains img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  object-position: center 40%;
+  image-rendering: auto; /* 照片图不用像素缩放 */
+}
 
+/* 心形起点下移到石亭下缘 */
+@media (min-width: 768px) {
+  .heart-rise { bottom: 40%; }
+}
+
+/* 蝴蝶：外层漂移轨迹 + 内层扇翅 */
+.bfly { position: absolute; z-index: 2; pointer-events: none; }
+.bfly svg { display: block; transform-origin: 50% 50%; animation: flutter .32s ease-in-out infinite alternate; }
+.bfly.d1 { animation: bfly-fly1 18s ease-in-out infinite; }
+.bfly.d2 { animation: bfly-fly2 23s ease-in-out infinite; }
+.bfly.d3 { animation: bfly-fly3 28s ease-in-out infinite; }
+@keyframes flutter { from { transform: scaleX(1) rotate(-8deg); } to { transform: scaleX(.4) rotate(8deg); } }
+@keyframes bfly-fly1 {
+  0% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-7vw, -9vh) rotate(-10deg); }
+  50% { transform: translate(4vw, -16vh) rotate(8deg); }
+  75% { transform: translate(-3vw, -6vh) rotate(-5deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+@keyframes bfly-fly2 {
+  0% { transform: translate(0, 0) rotate(0); }
+  30% { transform: translate(8vw, -6vh) rotate(9deg); }
+  60% { transform: translate(3vw, -15vh) rotate(-8deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+@keyframes bfly-fly3 {
+  0% { transform: translate(0, 0) rotate(0); }
+  35% { transform: translate(-5vw, -12vh) rotate(7deg); }
+  70% { transform: translate(6vw, -8vh) rotate(-10deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* 爱心上飘（从新人脚下附近升起） */
+.heart-rise { position: absolute; z-index: 2; bottom: 45%; pointer-events: none; opacity: 0; animation: heart-rise linear infinite; }
+.heart-rise svg { display: block; }
+@keyframes heart-rise {
+  0% { transform: translateY(0) scale(.8) rotate(-6deg); opacity: 0; }
+  12% { opacity: .95; }
+  55% { transform: translateY(-26vh) scale(1) rotate(-8deg); }
+  100% { transform: translateY(-54vh) scale(1.05) rotate(8deg); opacity: 0; }
+}
+
+/* 绿叶飘落（复用花瓣雨的落态） */
+.leaf-fall { position: absolute; z-index: 2; top: -6vh; pointer-events: none; animation: leaf-fall 8s linear infinite; }
+.leaf-fall svg { display: block; }
+@keyframes leaf-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: .9; }
+  50% { transform: translate3d(6vw, 50vh, 0) rotate(200deg); }
+  100% { transform: translate3d(-4vw, 110vh, 0) rotate(400deg); opacity: .7; }
+}
+
+/* 文字块压在图内招牌（3%-13%）下方、树冠+金色挂饰带（14%-25%）区域，
+   靠顶部渐暗遮罩（.hero-bg-wrap::after）拉开对比；新人头部在图内 42%-46% 不受影响 */
+/* 文字块：招牌下方树冠与石亭之间（名字中线图内 ~30%），任何窗口高度下随 hero 比例定位 */
+.hero-copy {
+  position: absolute; z-index: 4; left: 0; right: 0; top: 30%;
+  transform: translateY(-35%);
+  text-align: center;
+}
+.eyebrow {
+  margin: 0 0 6px; color: #fff3c4; font-size: 12px; font-weight: 900;
+  letter-spacing: .18em;
+  text-shadow: 0 -1px 0 #e8c86a, 0 1px 0 #e8c86a, -1px 0 0 #e8c86a, 1px 0 0 #e8c86a,
+    0 1px 0 #3d2b1a, 1px 0 0 #3d2b1a, -1px 1px 0 #3d2b1a, 1px 1px 0 #3d2b1a,
+    0 2px 0 #2a1a08, 2px 2px 0 rgba(42, 26, 8, .45);
+}
+
+/* 新人名字（缝合像素粗体 Fusion Pixel：淡奶黄内填 + 浅金过渡 + 深棕硬像素描边 + 右下厚度阴影） */
 .game-title {
-  margin: 14px auto 18px;
-  color: #e6a520;
-  font-family: Impact, 'Arial Black', sans-serif;
-  font-size: clamp(48px, 15vw, 68px);
+  margin: 0 auto 8px;
+  color: #fff3c4;
+  font-family: 'Fusion Pixel', Impact, 'Arial Black', sans-serif;
+  font-size: 24px; /* 2×12 像素网格，锐利 */
+  text-rendering: geometricPrecision;
   font-weight: 900;
-  line-height: .9;
+  line-height: 1.2;
   letter-spacing: .04em;
-  -webkit-text-stroke: 2px #744216;
-  text-shadow: 0 3px #ffc63b, 0 7px #6d4017, 4px 9px #173a70;
-  transform: scaleX(.9);
+  white-space: nowrap;
+  text-shadow:
+    0 -1px 0 #e8c86a, 0 1px 0 #e8c86a, -1px 0 0 #e8c86a, 1px 0 0 #e8c86a,
+    -1px -1px 0 #e8c86a, 1px -1px 0 #e8c86a, -1px 1px 0 #e8c86a, 1px 1px 0 #e8c86a,
+    0 -2px 0 #3d2b1a, 0 2px 0 #3d2b1a, -2px 0 0 #3d2b1a, 2px 0 0 #3d2b1a,
+    -2px -2px 0 #3d2b1a, 2px -2px 0 #3d2b1a, -2px 2px 0 #3d2b1a, 2px 2px 0 #3d2b1a,
+    3px 3px 0 #2a1a08, 4px 4px 0 rgba(42, 26, 8, .55);
+  transform: scaleX(.94);
 }
-.game-title span { display: block; white-space: nowrap; }
 
-.hero-cn { margin: 0; font-size: 15px; font-weight: 900; letter-spacing: .18em; text-shadow: 2px 3px #2b477a; }
-.hero-date { margin: 12px 0 0; color: #fff0ae; font-size: 14px; letter-spacing: .22em; text-shadow: 2px 2px #2b477a; }
+/* 日期（第三层，同配色层次：金边 + 棕边 + 右下厚度） */
+.hero-date {
+  margin: 0;
+  color: #fff3c4;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .22em;
+  text-shadow:
+    0 -1px 0 #e8c86a, 0 1px 0 #e8c86a, -1px 0 0 #e8c86a, 1px 0 0 #e8c86a,
+    -1px -1px 0 #3d2b1a, 1px -1px 0 #3d2b1a, -1px 1px 0 #3d2b1a, 1px 1px 0 #3d2b1a,
+    0 2px 0 #3d2b1a, 2px 0 0 #3d2b1a, 2px 2px 0 #2a1a08, 3px 3px 0 rgba(42, 26, 8, .5);
+}
 
 /* 专属邀请横幅（小徽章式） */
 .hero-guest {
-  margin: 16px 0 0; display: inline-block;
-  padding: 5px 18px;
-  color: #fff3c0; font-size: 13px; letter-spacing: .14em;
-  background: #2c315ae8; border: 3px solid #6a3d31;
-  box-shadow: inset 0 0 0 2px #d6aa67, 4px 5px #17203d;
-  text-shadow: 2px 2px #17203d;
+  margin: 8px 0 0; display: inline-block;
+  padding: 4px 14px;
+  color: #fff3c0; font-size: 12px; letter-spacing: .14em;
+  background: #6b4226e8; border: 3px solid #3d2b1a;
+  box-shadow: inset 0 0 0 2px #d6aa67, 4px 5px #2a1a08;
+  text-shadow: 2px 2px #2a1a08;
 }
 
-/* 开启按钮（模板同款） */
+/* 开启按钮（木纹像素面板，浮在底部对话框「好久不见」下方） */
 .scroll-hint {
   position: absolute; z-index: 6; left: 50%; bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
-  min-width: 172px; padding: 10px 16px 7px;
+  padding: 5px 12px 4px;
   transform: translateX(-50%);
-  display: grid; justify-items: center; gap: 3px;
-  border: 4px solid #6a3d31; color: #fff3c0; background: #2c315ae8;
-  box-shadow: inset 0 0 0 3px #d6aa67, 5px 6px #17203d;
+  display: flex; align-items: center; gap: 8px;
+  border: 3px solid #5b3a1a; color: #fff3c0; background: #8a5a2b;
+  box-shadow: inset 0 0 0 2px #d6aa67, 3px 4px #2a1a08;
   font-size: 12px; font-weight: 900; letter-spacing: .1em;
   cursor: pointer; animation: none;
 }
-.scroll-hint:active { transform: translate(calc(-50% + 3px), 3px); box-shadow: inset 0 0 0 3px #d6aa67, 2px 3px #17203d; }
-.scroll-hint b { color: #ffd25e; font: 900 20px/1 sans-serif; animation: bob 1.2s ease-in-out infinite; }
+.scroll-hint:active { transform: translate(calc(-50% + 3px), 3px); box-shadow: inset 0 0 0 2px #d6aa67, 2px 3px #2a1a08; }
+.scroll-hint b { color: #ffd25e; font: 900 16px/1 sans-serif; animation: bob 1.2s ease-in-out infinite; }
 
 /* ============================================================
    故事对话框（星露谷 NPC 对话样式）
@@ -1078,8 +1165,9 @@ footer {
   mask-image: linear-gradient(transparent 0 18%, #0003 22%, #000b 28%, #000 34%);
 }
 
-/* 闪烁星光 */
-#hero-scene .sky-stars { position: absolute; z-index: 1; inset: 0; overflow: hidden; }
+/* 闪烁星光（白天隐藏，夜间主题显示在封面上方） */
+#hero-scene .sky-stars { position: absolute; z-index: 1; inset: 0; overflow: hidden; display: none; }
+body.night #hero-scene .sky-stars { display: block; }
 #hero-scene .sky-stars::after {
   content: ''; position: absolute; left: -10%; right: -10%; top: 43%; height: 27%;
   opacity: .22; background: linear-gradient(180deg, transparent, #b9e5df 48%, transparent);
@@ -1109,8 +1197,8 @@ body.night { background: linear-gradient(180deg, #101a38 0%, #1d2b58 22%, #2a3f7
 body.night #envelope-screen { background: linear-gradient(180deg, #17224a 0%, #24376e 40%, #141d3d 60%, #0d1430 100%); }
 body.night .sec-title { color: #fff3d6; text-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); }
 body.night .open-hint, body.night footer { color: #ffe9c9; }
-body.night #hero::after { box-shadow: 0 0 0 4px #cdb878, 0 0 30px #fff2a8aa; }
-body.night .hills img { filter: brightness(0.45) saturate(0.7); }
+/* 夜间：封面压暗成夜空 + 保留星光；邀请横幅保持木纹暖色 */
+body.night .hero-mountains img { filter: brightness(0.6) saturate(0.9); }
 body.night .hero-guest { background: #6e2f4a; border-color: #ffb3c1 #2c1a30 #2c1a30 #f78da1; }
 
 /* ============================================================
@@ -1680,11 +1768,7 @@ body.night main#invitation { background: #16224a; }
   .floating-tools { right: calc((100vw - 480px) / 2 + 14px); }
 }
 
-/* —— 主视觉天空（模板第一页深夜蓝渐变） —— */
-#hero {
-  background: linear-gradient(180deg, #11185a 0%, #172d75 25%, #1d4f91 43%, #2377aa 59%, #2a97bc 75%, #38afcc 89%, #40b7d3 100%);
-}
-body.night #hero { background: linear-gradient(180deg, #101a38 0%, #1d2b58 45%, #0d1430 100%); }
+/* —— 主视觉天空：hero 自带星露谷天空渐变（见 #hero 定义） —— */
 
 /* —— 区块背景 —— */
 
@@ -2034,3 +2118,4 @@ body.night .firework-sky .campfire { filter: none; }
   .mascot-peek { gap: 6px; }
   .ending-mascot .mascot img { width: 72px; }
 }
+

@@ -7,6 +7,29 @@
 
 window.WEDDING_CONFIG = {
 
+  /* ---------- 封面标题（文字模块，编辑器可自定义） ----------
+     text/eyebrow/date 留空 = 自动（新郎 × 新娘 / SAVE THE DATE / 婚礼日期）
+     size 字号 px（12 的倍数像素最锐利）、color 文字填充色、
+     edge 金色描边、outline 深棕描边、shadow 右下硬阴影、
+     stroke 描边厚度档（1 细 / 2 标准 / 3 粗）、
+     font 字体（pixel 像素体 / hei 黑体 / system 系统默认）、
+     letterSpacing 字距（em）、
+     y 标题中线位置 / btnY 打卡按钮中心位置——都是相对「整张封面图」的 %（10 靠上 100 靠下） */
+  heroTitle: {
+    text: "", eyebrow: "", date: "",
+    size: 24, color: "#fff3c4", edge: "#e8c86a",
+    outline: "#3d2b1a", shadow: "#2a1a08",
+    stroke: 2, font: "pixel", letterSpacing: 0.04, y: 30, btnY: 92
+  },
+
+  /* ---------- 封面图片（编辑器可上传自定义封面；留空 = 内置 assets/tpl/hero-garden.webp） ---------- */
+  heroCover: "",
+
+  /* ---------- 外观主题 ----------
+     auto = 自动（18 点后到 6 点夜景）；day = 永远白天；night = 永远黑夜。
+     在编辑器「内容」tab 顶部可选。 */
+  theme: "auto",
+
   /* ---------- 新人信息 ---------- */
   couple: {
     groom: "杜晓宇",        // 新郎姓名
