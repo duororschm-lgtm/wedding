@@ -341,7 +341,7 @@ body.night .notice-flowers svg { filter: brightness(0.75); }
 #hero {
   position: relative;
   /* 480px 壳内全幅封面：整图铺满 hero，无天空底 */
-  min-height: min(100svh, calc(100vw * 1.7778)); /* 窄屏=原图比例整幅；宽屏不超过视口 */
+  min-height: min(100svh, calc(100vw * 2.1667)); /* 窄屏=原图比例整幅；宽屏不超过视口 */
   padding: max(52px, 7svh) 24px 22px;
   overflow: hidden;
   isolation: isolate;

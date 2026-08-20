@@ -293,7 +293,7 @@
 
 /* —— 封面标题实时预览（模仿请柬封面：图 + 顶部渐暗遮罩 + 三层文字） —— */
 #ed-title-preview {
-  position: relative; width: 180px; height: 320px; overflow: hidden;
+  position: relative; width: 180px; height: 390px; overflow: hidden;
   border: 3px solid #4a2f1d; border-radius: 6px;
   margin: 14px auto 12px; background: #10163f;
 }
