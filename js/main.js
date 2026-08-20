@@ -532,16 +532,29 @@
 
     function buildEnvelope() {
       var wrap = $('#envelope-wrap');
-      var back = PixelArt.sprite('envelopeBack', 10);   // 280×200
+      var screen = $('#envelope-screen');
+      var back = PixelArt.sprite('envelopeBack', 12);   // 336×240
       back.classList.add('env-back');
-      var front = PixelArt.sprite('envelopeFront', 10);
+      var front = PixelArt.sprite('envelopeFront', 12);
       front.classList.add('env-front');
 
       var flapWrap = makeDiv('flap-wrap');
-      flapWrap.appendChild(PixelArt.sprite('envelopeFlap', 10)); // 280×110
-      var seal = PixelArt.sprite('heart', 4);
-      seal.style.cssText = 'position:absolute;left:112px;top:74px';
+      flapWrap.appendChild(PixelArt.sprite('envelopeFlap', 12)); // 336×132
+
+      /* 金色蜡封（盖尖上，嵌像素爱心） */
+      var seal = makeDiv('wax-seal');
+      seal.appendChild(PixelArt.sprite('heartSm', 4));
       flapWrap.appendChild(seal);
+
+      /* 右上角像素邮票 */
+      var stamp = makeDiv('env-stamp');
+      stamp.appendChild(PixelArt.sprite('heartSm', 4));
+      flapWrap.appendChild(stamp);
+
+      /* 收件人像素字条（留空 = 新郎 × 新娘 亲启） */
+      var address = makeDiv('env-address');
+      address.appendChild(document.createTextNode(C.envelopeAddress || (groom + ' × ' + bride + ' 亲启')));
+      wrap.appendChild(address);
 
       /* 信纸：专属邀请显示宾客名字 */
       var letter = makeDiv('letter');
@@ -552,6 +565,21 @@
       wrap.appendChild(letter);
       wrap.appendChild(front);
       wrap.appendChild(flapWrap);
+
+      /* 开屏背景漂浮星星 */
+      for (var s = 0; s < 8; s++) {
+        var star = document.createElement('i');
+        star.className = 'env-star';
+        star.style.left = ((s * 53) % 90 + 5) + '%';
+        star.style.top = ((s * 37) % 55 + 4) + '%';
+        star.style.setProperty('--twinkle', (2 + (s % 4) * 0.6).toFixed(1) + 's');
+        star.style.animationDelay = (s * 0.4).toFixed(1) + 's';
+        screen.appendChild(star);
+      }
+
+      /* 轻提示文字也响应点击 */
+      var hint = $('#open-hint');
+      if (hint) hint.addEventListener('click', function () { openEnvelope(); });
     }
 
     function revealHero() {
@@ -567,19 +595,46 @@
       achievements.unlock('open');
       var wrap = $('#envelope-wrap');
       var screen = $('#envelope-screen');
-      wrap.classList.add('open');
+      var hint = $('#open-hint');
+      if (hint) hint.classList.add('hide');
       music.start();                                   // 点击手势 → 允许自动播放
-      setTimeout(function () { wrap.classList.add('leave'); }, 850);
+      /* 定格动画时序：魔法颤动+蜡封星光爆裂(0-0.3s) → 帧进掀盖+信纸弹出(0.3-0.8s)
+         → 信封帧进上浮淡出(1.4s) → 封面定焦入场(1.5s) → 屏幕半透明淡出(1.75s) → 移除(2.3s) */
+      wrap.classList.add('shake');
+      burstSparkles(wrap);
+      setTimeout(function () { wrap.classList.add('open'); }, 300);
+      setTimeout(function () { wrap.classList.add('leave'); }, 1400);
+      setTimeout(function () {
+        $('#hero').classList.add('entering');
+        revealHero();
+      }, 1500);
       setTimeout(function () {
         screen.classList.add('fade-out');
         $('#invitation').removeAttribute('aria-hidden');
         document.body.classList.remove('lock');
         $('#music-toggle').hidden = false;
         showTools();
-        revealHero();
-        setTimeout(function () { screen.style.display = 'none'; }, 500);
-      }, 1350);
+        setTimeout(function () { screen.style.display = 'none'; }, 550);
+      }, 1750);
       try { sessionStorage.setItem('wedding-opened', '1'); } catch (e) { /* 忽略 */ }
+    }
+
+    /* 蜡封处迸出 12 颗魔法星光（霍格沃兹式爆裂） */
+    function burstSparkles(wrap) {
+      var cx = 168, cy = 105; /* 蜡封中心（336 宽信封） */
+      for (var i = 0; i < 12; i++) {
+        var sp = document.createElement('i');
+        sp.className = 'sparkle';
+        var ang = (i / 12) * Math.PI * 2 + Math.random() * 0.5;
+        var dist = 46 + Math.random() * 46;
+        sp.style.setProperty('--dx', Math.round(Math.cos(ang) * dist) + 'px');
+        sp.style.setProperty('--dy', Math.round(Math.sin(ang) * dist) + 'px');
+        sp.style.left = cx + 'px';
+        sp.style.top = cy + 'px';
+        sp.style.animationDelay = (i * 0.03).toFixed(2) + 's';
+        wrap.appendChild(sp);
+        (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 900); })(sp);
+      }
     }
 
     function skipEnvelope() {

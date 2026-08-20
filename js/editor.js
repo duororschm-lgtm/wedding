@@ -349,6 +349,7 @@
     $('#ed-bride-nick').value = c.brideNick || '';
     /* 外观主题：白天/黑夜/自动 */
     $('#ed-theme').value = data.theme || 'auto';
+    $('#ed-env-address').value = data.envelopeAddress || '';
     /* 封面标题：颜色/字号/字体/描边/字距/位置 */
     var ht = data.heroTitle || {};
     $('#ed-tt-color').value = ht.color || '#fff3c4';
@@ -556,6 +557,7 @@
         }
       },
       theme: $('#ed-theme').value.trim() || 'auto',
+      envelopeAddress: ($('#ed-env-address').value || '').trim(),
       heroTitle: collectTitleForm(),
       heroCover: ($('#ed-cover-url').value || '').trim(),
       intro: {
