@@ -194,6 +194,7 @@ def main():
         # 填回执并提交
         ev(50, "document.getElementById('rsvp-name').value = '回执冒烟测试'; 'ok'")
         ev(51, "var p = document.querySelectorAll('#rsvp-attending label'); if (p[0]) p[0].click(); 'ok'")
+        wall_before = ev(53, "var g=document.getElementById('animal-grid'); g ? g.textContent : ''") or ""
         ev(52, "document.getElementById('rsvp-submit').click(); 'ok'")
         success, errtext = False, ""
         for _ in range(80):     # ≤20s
@@ -209,12 +210,12 @@ def main():
                 break
         print("回执提交成功框:", success, errtext and ("| 错误: " + errtext[:120]), flush=True)
 
-        # 提交成功后宾客墙应立即刷新，出现「试」字（回执冒烟测试的末字）
+        # 提交成功后宾客墙应立即刷新：与提交前的墙内容对比（新行插入名单）
         wall_refreshed = False
         for _ in range(40):     # ≤10s
             time.sleep(0.25)
             wall = ev(61, "var g=document.getElementById('animal-grid'); g ? g.textContent : ''")
-            if wall and "试" in wall:
+            if wall != wall_before:
                 wall_refreshed = True
                 break
         print("宾客墙即时刷新:", wall_refreshed, flush=True)
