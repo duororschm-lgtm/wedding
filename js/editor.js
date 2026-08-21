@@ -289,6 +289,7 @@
         contentType: file.type || 'image/jpeg'
       }).then(function (r) {
         if (r.error) throw new Error(r.error.message);
+        mirrorToCdn(path, file);
         var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
         $('#ed-cover-url').value = url;
         updateTitlePreview();
@@ -602,6 +603,20 @@
     });
   });
 
+  /* ---------- 照片镜像：Supabase 上传成功后同步一份到自购域名服务器 ----------
+     服务器是国内主力图床（微信打开快），Supabase 是境外备份。
+     镜像失败静默——请柬页会自动回退到 Supabase，不会碎图。 */
+  function mirrorToCdn(path, file) {
+    var api = window.PHOTO_UPLOAD_API;
+    var token = window.PHOTO_UPLOAD_TOKEN;
+    if (!api || !token || !window.fetch) return;
+    fetch(api + '?path=' + encodeURIComponent(path), {
+      method: 'POST',
+      headers: { 'X-Upload-Token': token },
+      body: file
+    }).catch(function () { /* 服务器不可用时静默，Supabase 仍是备份 */ });
+  }
+
   /* ---------- 背景音乐上传（storage 桶 music） ---------- */
   function cleanFileName(name) {
     /* 去掉非 ASCII 字符（中文等），只保留字母数字、点、横线、下划线 */
@@ -625,6 +640,7 @@
       contentType: file.type || 'audio/mpeg'
     }).then(function (r) {
       if (r.error) throw new Error(r.error.message);
+      mirrorToCdn(path, file);
       var url = supabase.storage.from('music').getPublicUrl(path).data.publicUrl;
       $('#ed-music').value = url;
       toast('音乐已上传，记得点「保存」生效');
@@ -655,6 +671,7 @@
         contentType: file.type || 'image/jpeg'
       }).then(function (r) {
         if (r.error) throw new Error(r.error.message);
+        mirrorToCdn(path, file);
         var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
         $(inputId).value = url;
         toast('照片已上传，记得点「保存」生效');
@@ -776,6 +793,7 @@
       contentType: file.type || 'image/jpeg'
     }).then(function (r) {
       if (r.error) return { ok: false, error: r.error.message };
+      mirrorToCdn(path, file);
       var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
       photosCache.push(url);
       return { ok: true };
@@ -882,6 +900,7 @@
       contentType: file.type || 'image/jpeg'
     }).then(function (r) {
       if (r.error) return { ok: false, error: r.error.message };
+      mirrorToCdn(path, file);
       var url = supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
       albumPhotos[prefix].push(url);
       return { ok: true };

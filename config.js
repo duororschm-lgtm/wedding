@@ -394,3 +394,12 @@ window.normalizeWeddingConfig = function (C) {
 
   return C;
 };
+
+/* ============================================================
+   照片 CDN（2026-08-21 上线）：
+   请柬页把 Supabase 图床地址重写到自购域名服务器（国内访问快），
+   Supabase 当境外备份；编辑器上传照片时同时镜像一份到服务器。
+   ============================================================ */
+window.PHOTO_CDN = 'https://wedding39.top';                    /* 照片加速域名（自购域名服务器） */
+window.PHOTO_UPLOAD_API = 'https://wedding39.top/api/upload';  /* 服务器上传接口（编辑器镜像用） */
+window.PHOTO_UPLOAD_TOKEN = 'wx39-7f3a9c21e8b4d6f5';          /* 上传接口校验 token */

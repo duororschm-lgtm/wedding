@@ -40,6 +40,43 @@
     return h;
   }
 
+  /* ---------- 照片 CDN：Supabase 图床 -> 自购域名服务器（国内加载快） ----------
+     服务器上缺图时自动回退到 Supabase 备份（境外，慢但不会碎图） */
+  var SUPABASE_STORAGE = 'https://qbwxvadsvqgszzabcqyq.supabase.co/storage/v1/object/public/';
+  var PHOTO_CDN = String(window.PHOTO_CDN || '').replace(/\/+$/, '');
+  function cdnUrl(u) {
+    if (PHOTO_CDN && typeof u === 'string' && u.indexOf(SUPABASE_STORAGE) === 0) {
+      return PHOTO_CDN + '/' + u.slice(SUPABASE_STORAGE.length);
+    }
+    return u;
+  }
+  function rewritePhotoUrls(obj) {
+    Object.keys(obj || {}).forEach(function (k) {
+      var v = obj[k];
+      if (typeof v === 'string') obj[k] = cdnUrl(v);
+      else if (v && typeof v === 'object' && !(v instanceof Date)) rewritePhotoUrls(v);
+    });
+    return obj;
+  }
+  document.addEventListener('error', function (e) {
+    var el = e.target;
+    if (!el || !el.tagName) return;
+    var tag = el.tagName.toLowerCase();
+    if (tag !== 'img' && tag !== 'audio' && tag !== 'video' && tag !== 'source') return;
+    if (el.getAttribute('data-fb')) return;
+    var cur = el.getAttribute('src') || el.src || '';
+    if (PHOTO_CDN && cur.indexOf(PHOTO_CDN + '/') === 0) {
+      el.setAttribute('data-fb', '1');
+      var orig = SUPABASE_STORAGE + cur.slice((PHOTO_CDN + '/').length);
+      if (tag === 'source') {
+        el.setAttribute('src', orig);
+        if (el.parentNode && el.parentNode.load) el.parentNode.load();
+      } else {
+        el.src = orig;
+      }
+    }
+  }, true);
+
   /* ---------- 提示气泡 ---------- */
   var toastTimer = null;
   function toast(msg) {
@@ -204,6 +241,8 @@
 
     /* 结构归一：男女双方婚宴补齐、顶层 date/venue 镜像男方主宴、sections 补全 */
     C = window.normalizeWeddingConfig(C);
+    /* 照片走自购域名服务器（国内快），Supabase 仅作境外备份 */
+    C = rewritePhotoUrls(C);
     C.couple = C.couple || {};
     C.share = C.share || {};
     applySections(C.sections);
