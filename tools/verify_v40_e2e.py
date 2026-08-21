@@ -209,10 +209,20 @@ def main():
                 break
         print("回执提交成功框:", success, errtext and ("| 错误: " + errtext[:120]), flush=True)
 
+        # 提交成功后宾客墙应立即刷新，出现「试」字（回执冒烟测试的末字）
+        wall_refreshed = False
+        for _ in range(40):     # ≤10s
+            time.sleep(0.25)
+            wall = ev(61, "var g=document.getElementById('animal-grid'); g ? g.textContent : ''")
+            if wall and "试" in wall:
+                wall_refreshed = True
+                break
+        print("宾客墙即时刷新:", wall_refreshed, flush=True)
+
         hard_errors = [e for e in errors if "favicon" not in e and "net::ERR_" not in e
                        and "marriage-scene" not in e and "couple-photo" not in e]  # 照片探测的预期 404
         print("JS 异常:", len(hard_errors), hard_errors[:3], flush=True)
-        ok = opened and success and not hard_errors
+        ok = opened and success and wall_refreshed and not hard_errors
         print("E2E:", "PASS" if ok else "FAIL", flush=True)
         sys.exit(0 if ok else 2)
     finally:

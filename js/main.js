@@ -2000,6 +2000,8 @@
           summary.hidden = true;
         }
         $('#rsvp-edit').hidden = !(savedRsvp && savedRsvp.id);
+        /* 回执已同步进主库，立即刷新宾客墙——提交者当场看到自己的头像亮起 */
+        buildGuestWall();
       }
 
       /* 用已保存的回执回填表单 */
