@@ -24,7 +24,7 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 SITE_DIR = "/var/www/wedding"
 
 UPLOAD_DIRS = ["assets", "css", "js", "db", "photos"]
-UPLOAD_FILES = ["index.html", "admin.html", "editor.html", "config.js", "share-preview.png"]
+UPLOAD_FILES = ["index.html", "admin.html", "editor.html", "config.js", "settings.json", "share-preview.png"]
 UPLOAD_GLOBS = ["MP_verify_*.txt"]
 
 
@@ -83,6 +83,8 @@ def do_upload():
                 if n % 30 == 0:
                     print("  已传 %d 个文件..." % n)
     for fn in UPLOAD_FILES:
+        if not os.path.exists(os.path.join(ROOT, fn)):
+            continue  # settings.json 快照由服务器端同步生成，本地可不存在
         put_file(os.path.join(ROOT, fn), SITE_DIR + "/" + fn)
         n += 1
     for g in UPLOAD_GLOBS:
@@ -118,7 +120,8 @@ def do_cert():
 
 
 def do_endpoint():
-    """安装照片镜像上传接口：upload_server.py + systemd 服务 + nginx /api/upload 代理"""
+    """安装照片镜像上传接口：upload_server.py + systemd 服务 + nginx /api/upload 代理
+    注意：不覆盖线上 nginx 配置（certbot 已改写加 443/ssl），只注入 include 文件。"""
     c = connect()
     sftp = c.open_sftp()
     sftp.put(os.path.join(HERE, "upload_server.py"), "/home/ubuntu/wedding_upload_server.py")
@@ -136,10 +139,21 @@ WorkingDirectory=/var/www/wedding
 [Install]
 WantedBy=multi-user.target
 """)
+    with sftp.open("/home/ubuntu/wedding-api.conf", "w") as f:
+        f.write("""    # 照片镜像上传接口（编辑器上传照片时同步到本服务器，后端 127.0.0.1:8790）
+    location = /api/upload {
+        proxy_pass http://127.0.0.1:8790;
+        client_max_body_size 60m;
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+    }
+""")
     sftp.close()
     run(c, "sudo cp /home/ubuntu/wedding-upload.service /etc/systemd/system/wedding-upload.service")
-    run(c, "sudo cp %s/nginx.conf /etc/nginx/sites-available/wedding" % SITE_DIR)
-    run(c, "sudo sed -i 's/你的域名/wedding39.top/g' /etc/nginx/sites-available/wedding")
+    run(c, "sudo cp /home/ubuntu/wedding-api.conf /etc/nginx/wedding-api.conf")
+    run(c, "if ! grep -q 'api/upload' /etc/nginx/sites-available/wedding; then "
+          "sudo sed -i \"/^    location \\/ {/i\\\\    include /etc/nginx/wedding-api.conf;\" "
+          "/etc/nginx/sites-available/wedding; fi")
     run(c, "sudo systemctl daemon-reload && sudo systemctl enable wedding-upload && sudo systemctl restart wedding-upload")
     run(c, "sleep 1 && systemctl is-active wedding-upload")
     run(c, "sudo nginx -t && sudo systemctl reload nginx")

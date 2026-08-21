@@ -42,7 +42,7 @@
 
   /* ---------- 照片 CDN：Supabase 图床 -> 自购域名服务器（国内加载快） ----------
      服务器上缺图时自动回退到 Supabase 备份（境外，慢但不会碎图） */
-  var SUPABASE_STORAGE = 'https://qbwxvadsvqgszzabcqyq.supabase.co/storage/v1/object/public/';
+  var SUPABASE_STORAGE = 'https://qbvwxadsvqgszzabcqyq.supabase.co/storage/v1/object/public/';
   var PHOTO_CDN = String(window.PHOTO_CDN || '').replace(/\/+$/, '');
   function cdnUrl(u) {
     if (PHOTO_CDN && typeof u === 'string' && u.indexOf(SUPABASE_STORAGE) === 0) {
@@ -157,6 +157,27 @@
         3000
       ).then(function (fresh) { return fresh || cachedSettings; });
     }
+
+    /* Supabase 彻底挂掉时的最后兜底：同源静态快照 settings.json
+       （编辑器每次保存时自动镜像到服务器，照片走 CDN 所以依然秒开） */
+    var staticSettingsP = null;
+    function getStaticSettings() {
+      if (!staticSettingsP) {
+        staticSettingsP = withTimeout(
+          fetch('settings.json', { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; }),
+          2500
+        );
+      }
+      return staticSettingsP;
+    }
+    remoteP = remoteP.then(function (d) {
+      if (d) return d;
+      return getStaticSettings().then(function (s) {
+        return (s && s.data) ? s.data : (s || null);
+      });
+    });
 
     /* 专属邀请：?g=token → 查宾客姓名（超时不影响打开，回执仍可提交） */
     var token = new URLSearchParams(location.search).get('g');

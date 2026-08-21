@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, unquote
 ROOT = "/var/www/wedding"
 TOKEN = "wx39-7f3a9c21e8b4d6f5"
 ALLOWED_EXT = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".svg",
-               ".mp3", ".m4a", ".wav", ".ogg"}
+               ".mp3", ".m4a", ".wav", ".ogg", ".json"}
 MAX_SIZE = 60 * 1024 * 1024  # 60MB
 
 
@@ -37,7 +37,8 @@ class Handler(BaseHTTPRequestHandler):
             q = self.path.split("?", 1)[1] if "?" in self.path else ""
             path = unquote(parse_qs(q).get("path", [""])[0])
             ext = os.path.splitext(path)[1].lower()
-            ok_prefix = path.startswith("photos/") or path.startswith("music/")
+            ok_prefix = path.startswith("photos/") or path.startswith("music/") \
+                or path == "settings.json"
             if not ok_prefix or ".." in path or "/" + path + "/" == "/photos//" \
                     or ext not in ALLOWED_EXT:
                 return self._json(400, {"ok": False, "error": "bad path"})

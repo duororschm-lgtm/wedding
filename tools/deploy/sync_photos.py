@@ -16,7 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from remote import connect, SITE_DIR  # noqa: E402
 
-SUPA = "https://qbwxvadsvqgszzabcqyq.supabase.co"
+SUPA = "https://qbvwxadsvqgszzabcqyq.supabase.co"
 KEY = "sb_publishable_IlLSIlIaf-KhJeFykLiLCg_oXOWGZ_N"
 BUCKETS = {
     "photos": ["cover", "map", "photos", "banquet/bride", "banquet/groom"],

@@ -116,9 +116,24 @@
         updated_at: new Date().toISOString()
       }).then(function (r) {
         if (r.error) throw new Error(r.error.message);
+        mirrorSettingsSnapshot(merged);
         return merged;
       });
     });
+  }
+
+  /* ---------- 静态兜底快照：把完整配置镜像到服务器 settings.json ----------
+     Supabase 挂掉时新客人也能看到最新真实内容（照片走服务器图床） */
+  function mirrorSettingsSnapshot(data) {
+    var api = window.PHOTO_UPLOAD_API;
+    var token = window.PHOTO_UPLOAD_TOKEN;
+    if (!api || !token || !window.fetch) return;
+    var body = JSON.stringify({ t: Date.now(), data: data });
+    fetch(api + '?path=settings.json', {
+      method: 'POST',
+      headers: { 'X-Upload-Token': token, 'Content-Type': 'application/json' },
+      body: body
+    }).catch(function () { /* 服务器不可用时静默，Supabase 恢复后仍正常 */ });
   }
 
   /* ---------- 视图切换 ---------- */
