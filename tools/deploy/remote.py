@@ -140,12 +140,22 @@ WorkingDirectory=/var/www/wedding
 WantedBy=multi-user.target
 """)
     with sftp.open("/home/ubuntu/wedding-api.conf", "w") as f:
-        f.write("""    # 照片镜像上传接口（编辑器上传照片时同步到本服务器，后端 127.0.0.1:8790）
+        f.write("""    # 写入接口（照片镜像上传 + 回执中转，后端 127.0.0.1:8790）
     location = /api/upload {
         proxy_pass http://127.0.0.1:8790;
         client_max_body_size 60m;
         proxy_read_timeout 180s;
         proxy_send_timeout 180s;
+    }
+    location = /api/rsvp {
+        proxy_pass http://127.0.0.1:8790;
+        client_max_body_size 16k;
+        proxy_read_timeout 30s;
+    }
+    location = /api/rsvp-delete {
+        proxy_pass http://127.0.0.1:8790;
+        client_max_body_size 16k;
+        proxy_read_timeout 30s;
     }
 """)
     sftp.close()

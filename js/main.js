@@ -658,9 +658,11 @@
       });
     }
 
-    /* 点开信封：音乐/照片预加载没完时，先亮金灿灿转圈稍候（最多 12 秒），就绪再开 */
+    /* 点开信封：先（在手势里）启动音乐——没加载完也会在加载好后自动播放；
+       照片预加载没完时，亮金灿灿转圈稍候（最多 12 秒），照片就绪再开 */
     function openEnvelope() {
       if (envelopeOpened || envWaitTimer) return;
+      music.start();
       if (preloadReady()) { doOpenEnvelope(); return; }
       showEnvLoading();
       var waited = 0;
@@ -676,8 +678,7 @@
     }
 
     function preloadReady() {
-      var photosDone = preloadState.photosTotal === 0 || preloadState.photosDone >= preloadState.photosTotal;
-      return photosDone && music.ready();
+      return preloadState.photosTotal === 0 || preloadState.photosDone >= preloadState.photosTotal;
     }
 
     /* 像素金点小转轮：4 帧精灵循环切换（安静不打扰，无文字） */
@@ -765,6 +766,7 @@
       document.body.classList.remove('lock');
       $('#music-toggle').hidden = false;
       showTools();
+      music.start();   // 老访客：静音预播直接渐入；被拦则等第一次点屏幕重试
     }
 
     /* ============================================================
@@ -776,8 +778,9 @@
       var audioEl = null, ctx = null, master = null, timer = null;
       var nextTime = 0, step = 0, playing = false, fileDead = false;
 
-      /* 预加载：进页面（信封停留时）就开始下载 mp3，点开后直接播放；
-         iOS/微信可能仍延迟到点按后才真正拉数据，其余平台点开即响 */
+      /* 预加载：进页面（信封停留时）就开始下载 mp3，加载好直接播放；
+         先试静音预播（音量 0）——桌面/安卓允许静音自动播，点开信封或
+         第一次点屏幕时把音量渐入（点按手势）；iOS/微信会拦下，等点按再播 */
       if (hasFile) {
         try {
           audioEl = new Audio(C.music.src);
@@ -785,6 +788,10 @@
           audioEl.volume = 0;
           audioEl.preload = 'auto';
           audioEl.onerror = function () { fileDead = true; if (playing) startSynth(); };
+          audioEl.play().then(function () {   // 静音试播成功 → 已处于播放中
+            playing = true;
+            syncUI(true);
+          }).catch(function () { /* 无手势被拦：等点按再播，不算加载失败 */ });
         } catch (e) { audioEl = null; }
       }
 
@@ -872,8 +879,24 @@
         if (ft) ft.classList.toggle('off', !on);
       }
 
+      /* 播放被自动播放策略拦下（还没等到点按手势）：下次点屏幕任意处自动重试 */
+      var retryFn = null;
+      function retryOnTap() {
+        if (retryFn) return;
+        retryFn = function () {
+          document.removeEventListener('click', retryFn);
+          retryFn = null;
+          start();
+        };
+        document.addEventListener('click', retryFn);
+      }
+
       function start() {
-        if (playing) return;
+        if (playing) {
+          /* 已在静音预播（音量 0）→ 只需把音量渐入，不用重新 play */
+          if (audioEl && audioEl.volume < 0.05) fadeTo(0.9, 900);
+          return;
+        }
         playing = true;
         syncUI(true);
         if (hasFile && !fileDead) {
@@ -887,9 +910,15 @@
             };
           }
           audioEl.play().then(function () { fadeTo(0.9, 900); })
-            .catch(function () {                       // 播放被拦/失败 → 切合成器
-              fileDead = true;
-              if (playing) startSynth();
+            .catch(function (err) {
+              if (err && err.name === 'NotAllowedError') {
+                playing = false;                       // 自动播放被拦：不判死文件，
+                syncUI(false);                         // 等下一次点按重试（mp3 还在）
+                retryOnTap();
+              } else {
+                fileDead = true;                       // 真加载失败 → 切合成器
+                if (playing) startSynth();
+              }
             });
           return;
         }
@@ -1581,25 +1610,34 @@
         photoDeck = deck;
         if (!deck.length) { board.classList.add('hidden'); return; }
 
-        /* 预加载：信封停留时后台下载前 12 张照片（错峰 250ms 避免抢首屏带宽），
+        /* 预加载：信封停留时后台下载前 12 张照片（错峰 250ms 避免抢带宽），
            展开照片栏时懒加载命中缓存 → 秒显。
+           优先音乐：等 mp3 就绪（最多 3 秒兜底）才开始照片预加载，不抢音乐带宽。
            必须挂进 DOM（部分内核对游离 new Image() 不发起请求），
            藏到屏幕外 1px，加载完即摘除——字节留在 HTTP 缓存里。
            进度记入 preloadState，供点开信封时判断是否就绪 */
         preloadState.photosTotal = Math.min(12, deck.length - 1);
-        deck.slice(1, 13).forEach(function (entry, i) {
-          setTimeout(function () {
-            var im = new Image();
-            im.alt = '';
-            im.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;';
-            im.onload = im.onerror = function () {
-              preloadState.photosDone++;
-              if (im.parentNode) im.parentNode.removeChild(im);
-            };
-            im.src = entry.src;
-            document.body.appendChild(im);
-          }, i * 250);
-        });
+        var photoEntries = deck.slice(1, 13);
+        function kickPhotoPreload() {
+          photoEntries.forEach(function (entry, i) {
+            setTimeout(function () {
+              var im = new Image();
+              im.alt = '';
+              im.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+              im.onload = im.onerror = function () {
+                preloadState.photosDone++;
+                if (im.parentNode) im.parentNode.removeChild(im);
+              };
+              im.src = entry.src;
+              document.body.appendChild(im);
+            }, i * 250);
+          });
+        }
+        (function waitMusicFirst(tries) {
+          if (music.ready()) { kickPhotoPreload(); return; }
+          if (tries <= 0) { kickPhotoPreload(); return; }
+          setTimeout(function () { waitMusicFirst(tries - 1); }, 300);
+        })(10);   /* 最多等 3 秒 */
 
         buildGallery();      /* 照片网格（默认收起，展开/收起按钮在照片栏） */
         buildGalleryToggle();
@@ -1796,6 +1834,33 @@
       function showError(msg) { errorEl.textContent = msg; errorEl.hidden = false; }
       function clearError() { errorEl.hidden = true; }
 
+      /* 回执写入走香港服务器中转（大陆→境外直连慢）：服务器收到后先落本地备份、
+         再同步转投 Supabase；转投暂失败也按成功算（回执没丢，稍后自动补投）。
+         服务器不可用时自动回退直连 Supabase */
+      function rsvpInsert(row) {
+        if (!window.RSVP_API) return supabase.from('rsvp').insert([row]);
+        return fetch(window.RSVP_API + '/api/rsvp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(row)
+        }).then(function (res) { return res.json(); }).then(function (j) {
+          if (j && j.ok) return { data: j.data, error: null };
+          return supabase.from('rsvp').insert([row]);
+        }).catch(function () { return supabase.from('rsvp').insert([row]); });
+      }
+
+      function rsvpDelete(id, token) {
+        if (!window.RSVP_API) return supabase.rpc('delete_rsvp', { p_id: id, p_token: token });
+        return fetch(window.RSVP_API + '/api/rsvp-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_id: id, p_token: token })
+        }).then(function (res) { return res.json(); }).then(function (j) {
+          if (j && j.ok) return { error: null };
+          return supabase.rpc('delete_rsvp', { p_id: id, p_token: token });
+        }).catch(function () { return supabase.rpc('delete_rsvp', { p_id: id, p_token: token }); });
+      }
+
       /* 参加与否胶囊（缺席时隐藏人数和住宿） */
       var pills = $all('#rsvp-attending label');
       var countField = $('#rsvp-count-field');
@@ -1885,13 +1950,13 @@
         /* 本机改过回执：先凭编辑凭证删旧行再插新行（避免重复） */
         var chain = Promise.resolve();
         if (savedRsvp && savedRsvp.id && savedRsvp.editToken) {
-          chain = supabase.rpc('delete_rsvp', { p_id: savedRsvp.id, p_token: savedRsvp.editToken })
+          chain = rsvpDelete(savedRsvp.id, savedRsvp.editToken)
             .then(function () { /* 忽略删除结果 */ });
         }
         chain.then(function () {
           /* 12 秒超时兜底：弱网下 fetch 可能永远挂起，避免按钮一直「正在送往山谷……」 */
           return Promise.race([
-            supabase.from('rsvp').insert([row]),
+            rsvpInsert(row),
             new Promise(function (_, rej) { setTimeout(function () { rej(new Error('请求超时（12 秒无响应）')); }, 12000); })
           ]);
         }).then(function (r) {

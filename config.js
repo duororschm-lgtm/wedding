@@ -403,3 +403,4 @@ window.normalizeWeddingConfig = function (C) {
 window.PHOTO_CDN = 'https://wedding39.top';                    /* 照片加速域名（自购域名服务器） */
 window.PHOTO_UPLOAD_API = 'https://wedding39.top/api/upload';  /* 服务器上传接口（编辑器镜像用） */
 window.PHOTO_UPLOAD_TOKEN = 'wx39-7f3a9c21e8b4d6f5';          /* 上传接口校验 token */
+window.RSVP_API = 'https://wedding39.top';                     /* 回执写入中转（服务器转投 Supabase，失败回退直连） */
