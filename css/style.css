@@ -1860,6 +1860,22 @@ body.night main#invitation { background: #16224a; }
   width: min(100%, 480px);
 }
 
+/* —— 信封加载小转轮：点开时若音乐/照片没下载完，像素金点绕圈稍候（无文字，安静提示） —— */
+.env-loading {
+  position: absolute;
+  left: 50%; top: 57%;
+  z-index: 40;
+  width: 0; height: 0;
+  pointer-events: none;
+}
+.env-loading svg {
+  position: absolute;
+  left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 6px rgba(255, 200, 60, 0.45));
+}
+
 @media (min-width: 520px) {
   #music-toggle { right: calc((100vw - 480px) / 2 + 14px); }
   .floating-tools { right: calc((100vw - 480px) / 2 + 14px); }

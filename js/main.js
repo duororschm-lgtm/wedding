@@ -546,6 +546,12 @@
       return PixelArt.sprite(a.svg, 2);
     }
 
+    /* 宾客墙只显示名字最后一个字（杜晓宇 → 宇），头像哈希仍用全名避免撞头像 */
+    function shortName(name) {
+      name = (name || '').trim();
+      return name.slice(-1);
+    }
+
     function buildGuestWall() {
       var grid = $('#animal-grid');
       grid.innerHTML = '';
@@ -573,7 +579,7 @@
           ic.appendChild(guestAvatar(row.name));
           cell.appendChild(ic);
           var nm = makeDiv('animal-name');
-          nm.textContent = row.name;
+          nm.textContent = shortName(row.name);
           cell.appendChild(nm);
           if ((row.guest_count || 1) > 1) {
             var c = makeDiv('guest-count');
@@ -589,6 +595,9 @@
        二、开屏信封
        ============================================================ */
     var envelopeOpened = false;
+    var envWaitTimer = null;
+    /* 预加载进度：照片总数/完成数（音乐就绪问 music.ready()） */
+    var preloadState = { photosTotal: 0, photosDone: 0 };
 
     function buildEnvelope() {
       var wrap = $('#envelope-wrap');
@@ -649,7 +658,58 @@
       });
     }
 
+    /* 点开信封：音乐/照片预加载没完时，先亮金灿灿转圈稍候（最多 12 秒），就绪再开 */
     function openEnvelope() {
+      if (envelopeOpened || envWaitTimer) return;
+      if (preloadReady()) { doOpenEnvelope(); return; }
+      showEnvLoading();
+      var waited = 0;
+      envWaitTimer = setInterval(function () {
+        waited += 250;
+        if (preloadReady() || waited >= 12000) {
+          clearInterval(envWaitTimer);
+          envWaitTimer = null;
+          hideEnvLoading();
+          doOpenEnvelope();
+        }
+      }, 250);
+    }
+
+    function preloadReady() {
+      var photosDone = preloadState.photosTotal === 0 || preloadState.photosDone >= preloadState.photosTotal;
+      return photosDone && music.ready();
+    }
+
+    /* 像素金点小转轮：4 帧精灵循环切换（安静不打扰，无文字） */
+    var envLoadingEl = null, envLoadFrames = [], envLoadTimer = null;
+    function showEnvLoading() {
+      if (envLoadingEl) return;
+      var wrap = makeDiv('env-loading');
+      ['loadF0', 'loadF1', 'loadF2', 'loadF3'].forEach(function (n, i) {
+        var s = PixelArt.sprite(n, 3);
+        s.style.display = i === 0 ? '' : 'none';
+        wrap.appendChild(s);
+        envLoadFrames.push(s);
+      });
+      var screen = $('#envelope-screen');
+      if (screen) screen.appendChild(wrap);
+      envLoadingEl = wrap;
+      envLoadTimer = setInterval(function () {
+        var cur = -1;
+        envLoadFrames.forEach(function (f, i) { if (f.style.display !== 'none') cur = i; });
+        envLoadFrames[cur].style.display = 'none';
+        envLoadFrames[(cur + 1) % envLoadFrames.length].style.display = '';
+      }, 150);
+    }
+
+    function hideEnvLoading() {
+      if (envLoadTimer) { clearInterval(envLoadTimer); envLoadTimer = null; }
+      envLoadFrames = [];
+      if (envLoadingEl && envLoadingEl.parentNode) envLoadingEl.parentNode.removeChild(envLoadingEl);
+      envLoadingEl = null;
+    }
+
+    function doOpenEnvelope() {
       if (envelopeOpened) return;
       envelopeOpened = true;
       achievements.unlock('open');
@@ -715,6 +775,18 @@
       var hasFile = !!(C.music && C.music.src);
       var audioEl = null, ctx = null, master = null, timer = null;
       var nextTime = 0, step = 0, playing = false, fileDead = false;
+
+      /* 预加载：进页面（信封停留时）就开始下载 mp3，点开后直接播放；
+         iOS/微信可能仍延迟到点按后才真正拉数据，其余平台点开即响 */
+      if (hasFile) {
+        try {
+          audioEl = new Audio(C.music.src);
+          audioEl.loop = true;
+          audioEl.volume = 0;
+          audioEl.preload = 'auto';
+          audioEl.onerror = function () { fileDead = true; if (playing) startSynth(); };
+        } catch (e) { audioEl = null; }
+      }
 
       var NOTE = {
         'F#5': 739.99, 'E5': 659.25, 'D5': 587.33, 'C#5': 554.37,
@@ -849,7 +921,13 @@
         }
       });
 
-      return { start: start, stop: stop, toggle: toggle };
+      /* 是否已可开播：无文件/加载失败（走合成器）→ 就绪；mp3 缓冲到可播放 → 就绪 */
+      function ready() {
+        if (!hasFile || fileDead) return true;
+        return !!(audioEl && audioEl.readyState >= 2);
+      }
+
+      return { start: start, stop: stop, toggle: toggle, ready: ready };
     })();
 
     /* ============================================================
@@ -1502,6 +1580,26 @@
         urls.forEach(function (u, i) { if (u) deck.push({ src: u, isScene: i === 0 }); });
         photoDeck = deck;
         if (!deck.length) { board.classList.add('hidden'); return; }
+
+        /* 预加载：信封停留时后台下载前 12 张照片（错峰 250ms 避免抢首屏带宽），
+           展开照片栏时懒加载命中缓存 → 秒显。
+           必须挂进 DOM（部分内核对游离 new Image() 不发起请求），
+           藏到屏幕外 1px，加载完即摘除——字节留在 HTTP 缓存里。
+           进度记入 preloadState，供点开信封时判断是否就绪 */
+        preloadState.photosTotal = Math.min(12, deck.length - 1);
+        deck.slice(1, 13).forEach(function (entry, i) {
+          setTimeout(function () {
+            var im = new Image();
+            im.alt = '';
+            im.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+            im.onload = im.onerror = function () {
+              preloadState.photosDone++;
+              if (im.parentNode) im.parentNode.removeChild(im);
+            };
+            im.src = entry.src;
+            document.body.appendChild(im);
+          }, i * 250);
+        });
 
         buildGallery();      /* 照片网格（默认收起，展开/收起按钮在照片栏） */
         buildGalleryToggle();

@@ -25,7 +25,7 @@ SITE_DIR = "/var/www/wedding"
 
 UPLOAD_DIRS = ["assets", "css", "js", "db", "photos"]
 UPLOAD_FILES = ["index.html", "admin.html", "editor.html", "config.js", "settings.json", "share-preview.png"]
-UPLOAD_GLOBS = ["MP_verify_*.txt"]
+UPLOAD_GLOBS = ["MP_verify_*.txt", "63411ba9ed4f6ba8263871385bbceedf.txt"]
 
 
 def connect():
