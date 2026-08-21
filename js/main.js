@@ -866,7 +866,7 @@
         var startVol = audioEl.volume;
         var t0 = performance.now();
         var stepF = function (now) {
-          var p = Math.min(1, (now - t0) / ms);
+          var p = Math.min(1, Math.max(0, (now - t0) / ms));  // rAF 时间戳可能早于 t0 1ms，夹紧防 volume 越界
           audioEl.volume = startVol + (target - startVol) * p;
           if (p < 1) requestAnimationFrame(stepF);
         };
