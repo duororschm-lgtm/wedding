@@ -181,7 +181,9 @@
 
   /* ---------- tab 切换 ---------- */
   var TAB_IDS = ['content', 'photos', 'guests', 'games', 'modules', 'board'];
+  var currentTab = null;
   function activateTab(id) {
+    currentTab = id;
     $all('.editor-tabs .tab').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-tab') === id);
     });
@@ -200,6 +202,11 @@
       activateTab(btn.getAttribute('data-tab'));
     });
   });
+
+  /* 看板开着时每 15 秒自动刷新：宾客一提交回执，编辑器立刻能看到（切走即停） */
+  setInterval(function () {
+    if (currentTab === 'board' && document.visibilityState === 'visible') loadBoardTab();
+  }, 15000);
 
   /* ============================================================
      ⓪ 封面标题（张宇 × 赵熙雅）：自定义 + 实时预览

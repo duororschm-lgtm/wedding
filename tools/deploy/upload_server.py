@@ -57,11 +57,13 @@ def _backup_append(clean):
 
 
 def _upsert_rsvp(clean):
-    """写入 Supabase：edit_token 唯一索引保证幂等。
-    普通插入（不带 on_conflict）——on_conflict 的更新分支要求 anon 有 UPDATE
-    策略（会被 RLS 拦 42501），重复补投时 409 视为已存在即可，无需更新。"""
+    """写入 Supabase：走 insert_rsvp RPC（security definer，按 edit_token upsert，
+    插入或更新后返回该行 id）。anon 无 select 策略，直接 REST 插入拿不到 id，
+    走 RPC 才能把 id 回传给宾客；同 token 重复补投也只会更新原行，不产生 409。
+    PostgREST 按参数名精确匹配 RPC：函数形参带 p_ 前缀，键也要对应加前缀。"""
+    payload = {"p_" + k: v for k, v in clean.items()}
     try:
-        resp = _supa("/rest/v1/rsvp", [clean])
+        resp = _supa("/rest/v1/rpc/insert_rsvp", payload)
     except Exception as e:
         body = b""
         try:
@@ -69,10 +71,20 @@ def _upsert_rsvp(clean):
         except Exception:
             pass
         if b"duplicate" in body.lower() or b"23505" in body:
-            return {"already": True}   # 库里已有同 token 行，视为已同步
+            return {"already": True}   # 幂等兜底：视为已同步
         raise
     body = resp.read().decode("utf-8")
-    return json.loads(body) if body.strip() else {"inserted": True}   # minimal 无回读体
+    if not body.strip():
+        return {"inserted": True}
+    try:
+        parsed = json.loads(body)
+    except Exception:
+        return {"inserted": True}
+    if isinstance(parsed, dict) and parsed.get("id") is not None:
+        return {"id": parsed["id"]}
+    if isinstance(parsed, int):
+        return {"id": parsed}   # RPC 标量返回：body 就是 JSON 数字
+    return {"inserted": True}
 
 
 def _replay(limit=6, budget=5.0):
@@ -221,7 +233,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             data = _upsert_rsvp(clean)
             if isinstance(data, dict) and (data.get("already") or data.get("inserted")):
-                data = None   # 已落库（含重复补投），无需回读
+                data = None   # 幂等兜底路径，无 id 可回传
+            # 正常路径 data = {"id": N}，原样带回给前端保存（本机「修改回执」要用）
         except Exception:
             try:
                 with open("/home/ubuntu/rsvp_api.log", "a", encoding="utf-8") as f:

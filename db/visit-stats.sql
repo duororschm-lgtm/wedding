@@ -71,7 +71,7 @@ as $$
   from public.rsvp
   where attending = true
   order by created_at asc
-  limit 60
+  limit 200
 $$;
 
 grant execute on function public.rsvp_wall() to anon, authenticated;
