@@ -45,7 +45,9 @@ def _supa(path, payload, timeout=6):
     req.add_header("Authorization", "Bearer " + SUPA_KEY)
     req.add_header("Content-Type", "application/json")
     if path.startswith("/rest/v1/rsvp"):
-        req.add_header("Prefer", "return=representation")
+        # 不能要 return=representation：插入后 PostgREST 会按 anon 回读新行，
+        # 而 anon 对 rsvp 无 select 策略（保护宾客手机号）→ 报 401/42501
+        req.add_header("Prefer", "return=minimal")
     return urlopen(req, timeout=timeout)
 
 
@@ -55,20 +57,22 @@ def _backup_append(clean):
 
 
 def _upsert_rsvp(clean):
-    """写入 Supabase：edit_token 唯一索引下冲突即合并（重复投递/补投都幂等）"""
+    """写入 Supabase：edit_token 唯一索引保证幂等。
+    普通插入（不带 on_conflict）——on_conflict 的更新分支要求 anon 有 UPDATE
+    策略（会被 RLS 拦 42501），重复补投时 409 视为已存在即可，无需更新。"""
     try:
-        resp = _supa("/rest/v1/rsvp?on_conflict=edit_token", [clean])
+        resp = _supa("/rest/v1/rsvp", [clean])
     except Exception as e:
         body = b""
         try:
             body = e.read() or b""
         except Exception:
             pass
-        if b"conflict" in body.lower():   # 库里还没建唯一索引 → 退回普通插入
-            resp = _supa("/rest/v1/rsvp", [clean])
-        else:
-            raise
-    return json.loads(resp.read().decode("utf-8"))
+        if b"duplicate" in body.lower() or b"23505" in body:
+            return {"already": True}   # 库里已有同 token 行，视为已同步
+        raise
+    body = resp.read().decode("utf-8")
+    return json.loads(body) if body.strip() else {"inserted": True}   # minimal 无回读体
 
 
 def _replay(limit=6, budget=5.0):
@@ -216,11 +220,14 @@ class Handler(BaseHTTPRequestHandler):
             pass  # 备份写不了也继续尝试转投
         try:
             data = _upsert_rsvp(clean)
+            if isinstance(data, dict) and (data.get("already") or data.get("inserted")):
+                data = None   # 已落库（含重复补投），无需回读
         except Exception:
             try:
                 with open("/home/ubuntu/rsvp_api.log", "a", encoding="utf-8") as f:
-                    f.write("%.1fs 本地备份 ok（Supabase 暂不可达） %s\n"
-                            % (time.time() - t0, clean.get("name", "")[:10]))
+                    f.write("%s %.1fs 本地备份 ok（Supabase 暂不可达） %s\n"
+                            % (time.strftime("%m-%d %H:%M:%S"), time.time() - t0,
+                               clean.get("name", "")[:10]))
             except Exception:
                 pass
             # Supabase 暂不可达：回执已安全落本服务器，稍后自动补投，按成功返回
@@ -231,7 +238,9 @@ class Handler(BaseHTTPRequestHandler):
             pass
         try:
             with open("/home/ubuntu/rsvp_api.log", "a", encoding="utf-8") as f:
-                f.write("%.1fs 已同步 %s\n" % (time.time() - t0, clean.get("name", "")[:10]))
+                f.write("%s %.1fs 已同步 %s\n"
+                        % (time.strftime("%m-%d %H:%M:%S"), time.time() - t0,
+                           clean.get("name", "")[:10]))
         except Exception:
             pass
         return self._json(200, {"ok": True, "data": data, "error": None})
