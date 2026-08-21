@@ -161,7 +161,7 @@ WantedBy=multi-user.target
     sftp.close()
     run(c, "sudo cp /home/ubuntu/wedding-upload.service /etc/systemd/system/wedding-upload.service")
     run(c, "sudo cp /home/ubuntu/wedding-api.conf /etc/nginx/wedding-api.conf")
-    run(c, "if ! grep -q 'api/upload' /etc/nginx/sites-available/wedding; then "
+    run(c, "if ! grep -q 'wedding-api.conf' /etc/nginx/sites-available/wedding; then "
           "sudo sed -i \"/^    location \\/ {/i\\\\    include /etc/nginx/wedding-api.conf;\" "
           "/etc/nginx/sites-available/wedding; fi")
     run(c, "sudo systemctl daemon-reload && sudo systemctl enable wedding-upload && sudo systemctl restart wedding-upload")

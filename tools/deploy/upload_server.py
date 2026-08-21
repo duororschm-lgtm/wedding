@@ -13,6 +13,7 @@ Supabase 仍是数据主库；回执先写本地备份（/home/ubuntu/rsvp_backu
 import json
 import os
 import re
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, unquote
 from urllib.request import Request, urlopen
@@ -34,8 +35,9 @@ NAME_RE = re.compile(r"^[\w一-鿿·\-\s]{1,60}$")   # 姓名：中英文/·/-/�
 TOKEN_RE = re.compile(r"^[a-z0-9]{8,64}$")                # 编辑凭证
 
 
-def _supa(path, payload):
-    """转投 Supabase REST（同步：港→境外快，保证宾客墙/编辑器立即可见）"""
+def _supa(path, payload, timeout=6):
+    """转投 Supabase REST（同步：港→境外快，保证宾客墙/编辑器立即可见）。
+    timeout 6 秒封顶：Supabase 卡住也不拖垮宾客——本地备份兜底，之后补投。"""
     req = Request(SUPA + path,
                   data=json.dumps(payload).encode("utf-8"),
                   method="POST")
@@ -44,7 +46,7 @@ def _supa(path, payload):
     req.add_header("Content-Type", "application/json")
     if path.startswith("/rest/v1/rsvp"):
         req.add_header("Prefer", "return=representation")
-    return urlopen(req, timeout=20)
+    return urlopen(req, timeout=timeout)
 
 
 def _backup_append(clean):
@@ -69,14 +71,16 @@ def _upsert_rsvp(clean):
     return json.loads(resp.read().decode("utf-8"))
 
 
-def _replay():
-    """把备份里尚未同步成功的回执补投 Supabase（每次收到新回执时调用一次）"""
+def _replay(limit=6, budget=5.0):
+    """把备份里尚未同步成功的回执补投 Supabase。
+    限时限量：每次最多补投 limit 行、总耗时不超过 budget 秒——
+    只在前台插入成功（Supabase 通畅）后才调用，失败时宁可留到下次。"""
     try:
         with open(BACKUP, encoding="utf-8") as f:
             lines = f.read().splitlines()
     except FileNotFoundError:
         return
-    out, changed = [], False
+    out, changed, done, t0 = [], False, 0, time.time()
     for ln in lines:
         try:
             rec = json.loads(ln)
@@ -86,12 +90,16 @@ def _replay():
         if not row or rec.get("synced"):
             out.append(ln)
             continue
+        if done >= limit or time.time() - t0 > budget:
+            out.append(ln)                 # 本次补投配额用完，留到下次
+            continue
         try:
             _upsert_rsvp(row)
         except Exception:
             out.append(ln)                 # 仍不同步，留到下次补投
             continue
         changed = True
+        done += 1
         out.append(json.dumps({"row": row, "synced": True}, ensure_ascii=False))
     if changed:
         tmp = BACKUP + ".tmp"
@@ -198,21 +206,35 @@ class Handler(BaseHTTPRequestHandler):
             "check_out_at": (str(row.get("check_out_at") or "")[:19] or None),
             "edit_token": edit_token,
         }
-        # 先落国内（本地备份，任何情况不丢），再同步转投 Supabase
+        # 先落国内（本地备份，任何情况不丢），再同步转投 Supabase。
+        # 顺序关键：先投当前这条（宾客只等它，最多 6 秒出结果），
+        # 转投成功才顺手补投历史未同步的（限时限量，绝不拖慢宾客）。
+        t0 = time.time()
         try:
             _backup_append(clean)
         except Exception:
             pass  # 备份写不了也继续尝试转投
         try:
-            _replay()                       # 顺手补投历史未同步的回执
+            data = _upsert_rsvp(clean)
+        except Exception:
+            try:
+                with open("/home/ubuntu/rsvp_api.log", "a", encoding="utf-8") as f:
+                    f.write("%.1fs 本地备份 ok（Supabase 暂不可达） %s\n"
+                            % (time.time() - t0, clean.get("name", "")[:10]))
+            except Exception:
+                pass
+            # Supabase 暂不可达：回执已安全落本服务器，稍后自动补投，按成功返回
+            return self._json(200, {"ok": True, "data": None, "error": "supabase_unreachable"})
+        try:
+            _replay()
         except Exception:
             pass
         try:
-            data = _upsert_rsvp(clean)
-            return self._json(200, {"ok": True, "data": data, "error": None})
+            with open("/home/ubuntu/rsvp_api.log", "a", encoding="utf-8") as f:
+                f.write("%.1fs 已同步 %s\n" % (time.time() - t0, clean.get("name", "")[:10]))
         except Exception:
-            # Supabase 暂不可达：回执已安全落本服务器，稍后自动补投，按成功返回
-            return self._json(200, {"ok": True, "data": None, "error": "supabase_unreachable"})
+            pass
+        return self._json(200, {"ok": True, "data": data, "error": None})
 
     def _rsvp_delete(self):
         raw = self._read_body(4 * 1024)
@@ -234,7 +256,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     print("wedding write API on 127.0.0.1:8790 (upload/rsvp/rsvp-delete)")
     try:
-        _replay()   # 启动时先补投历史未同步的回执
+        _replay(limit=50, budget=25)   # 启动时尽量清空历史未同步的回执（25s 封顶，不挡开服）
     except Exception:
         pass
     HTTPServer(("127.0.0.1", 8790), Handler).serve_forever()

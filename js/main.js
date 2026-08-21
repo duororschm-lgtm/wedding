@@ -597,7 +597,7 @@
     var envelopeOpened = false;
     var envWaitTimer = null;
     /* 预加载进度：照片总数/完成数（音乐就绪问 music.ready()） */
-    var preloadState = { photosTotal: 0, photosDone: 0 };
+    var preloadState = window.preloadState = { photosTotal: 0, photosDone: 0 };
 
     function buildEnvelope() {
       var wrap = $('#envelope-wrap');
