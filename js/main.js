@@ -1798,7 +1798,7 @@
 
     /* ============================================================
        九、出席回执（Supabase；专属邀请自动填姓名并关联嘉宾）
-           支持住宿登记、修改回执（本机已提交过则先删旧再插新）
+           支持住宿登记、修改回执（服务端按 edit_token upsert：改=原地更新，再填一份=新增）
        ============================================================ */
     function buildRSVP() {
       var form = $('#rsvp-form');
@@ -1813,6 +1813,7 @@
       var STORAGE_KEY = 'pixel-wedding-rsvp';
       var savedRsvp = null;
       try { savedRsvp = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { savedRsvp = null; }
+      var againMode = false; /* 「再填一份」模式：新 token 新增一行，不动自己那份凭证 */
 
       if (!supabase) {
         form.classList.add('hidden');
@@ -1837,28 +1838,33 @@
       /* 回执写入走香港服务器中转（大陆→境外直连慢）：服务器收到后先落本地备份、
          再同步转投 Supabase；转投暂失败也按成功算（回执没丢，稍后自动补投）。
          服务器不可用时自动回退直连 Supabase */
+      /* 回执写入：先走香港中继（快、备份兜底）；中继不可达时直连 Supabase 的
+         insert_rsvp RPC——两条路都是按 edit_token upsert，幂等不会产生重复行 */
+      function rsvpRpcParams(row) {
+        return {
+          p_guest_id: row.guest_id, p_name: row.name, p_phone: row.phone,
+          p_attending: row.attending, p_guest_count: row.guest_count,
+          p_message: row.message, p_needs_accommodation: row.needs_accommodation,
+          p_check_in_at: row.check_in_at, p_check_out_at: row.check_out_at,
+          p_edit_token: row.edit_token
+        };
+      }
       function rsvpInsert(row) {
-        if (!window.RSVP_API) return supabase.from('rsvp').insert([row]);
+        function directRpc() {
+          return supabase.rpc('insert_rsvp', rsvpRpcParams(row)).then(function (r) {
+            if (r.error) return { data: null, error: r.error };
+            return { data: { id: r.data }, error: null };
+          });
+        }
+        if (!window.RSVP_API) return directRpc();
         return fetch(window.RSVP_API + '/api/rsvp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(row)
         }).then(function (res) { return res.json(); }).then(function (j) {
           if (j && j.ok) return { data: j.data, error: null };
-          return supabase.from('rsvp').insert([row]);
-        }).catch(function () { return supabase.from('rsvp').insert([row]); });
-      }
-
-      function rsvpDelete(id, token) {
-        if (!window.RSVP_API) return supabase.rpc('delete_rsvp', { p_id: id, p_token: token });
-        return fetch(window.RSVP_API + '/api/rsvp-delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_id: id, p_token: token })
-        }).then(function (res) { return res.json(); }).then(function (j) {
-          if (j && j.ok) return { error: null };
-          return supabase.rpc('delete_rsvp', { p_id: id, p_token: token });
-        }).catch(function () { return supabase.rpc('delete_rsvp', { p_id: id, p_token: token }); });
+          return directRpc();
+        }).catch(function () { return directRpc(); });
       }
 
       /* 参加与否胶囊（缺席时隐藏人数和住宿） */
@@ -1941,24 +1947,24 @@
           needs_accommodation: needsAcc ? 'yes' : 'no',
           check_in_at: needsAcc ? checkIn.replace('T', ' ') : null,
           check_out_at: needsAcc ? checkOut.replace('T', ' ') : null,
-          edit_token: (savedRsvp && savedRsvp.editToken) || (Math.random().toString(36).slice(2) + Date.now().toString(36))
+          /* 修改回执=复用自己那份 token（服务端 upsert 原地更新）；再填一份=全新 token 新增一行 */
+          edit_token: (!againMode && savedRsvp && savedRsvp.editToken) || (Math.random().toString(36).slice(2) + Date.now().toString(36))
         };
 
         submitBtn.disabled = true;
         submitBtn.textContent = '正在送往山谷……';
 
-        /* 本机改过回执：先凭编辑凭证删旧行再插新行（避免重复） */
-        var chain = Promise.resolve();
-        if (savedRsvp && savedRsvp.id && savedRsvp.editToken) {
-          chain = rsvpDelete(savedRsvp.id, savedRsvp.editToken)
-            .then(function () { /* 忽略删除结果 */ });
-        }
-        chain.then(function () {
-          /* 12 秒超时兜底：弱网下 fetch 可能永远挂起，避免按钮一直「正在送往山谷……」 */
+        /* 提交自带重试：中继按 edit_token 幂等写入，超时后重试绝不会产生重复行；
+           每次重试换一条新 TCP 连接，避开丢包链路（PC→香港 16% 丢包会吞掉响应） */
+        function attempt(ms) {
           return Promise.race([
             rsvpInsert(row),
-            new Promise(function (_, rej) { setTimeout(function () { rej(new Error('请求超时（12 秒无响应）')); }, 12000); })
+            new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, ms); })
           ]);
+        }
+        attempt(12000).catch(function () {
+          submitBtn.textContent = '网络不太稳，自动重试中…';
+          return attempt(8000).catch(function () { return attempt(8000); });
         }).then(function (r) {
           submitBtn.disabled = false;
           submitBtn.textContent = '✉ 提交回执';
@@ -1967,19 +1973,24 @@
             showError('提交失败：' + (r.error.message || '网络异常') + ' · 请检查网络后重试');
             return;
           }
-          savedRsvp = {
-            id: (r.data && r.data[0] && r.data[0].id) || null,
+          var newRsvp = {
+            id: (r.data && ((r.data[0] && r.data[0].id) || r.data.id)) || null,
             editToken: row.edit_token,
             name: name, attending: attending, guestCount: guestCount,
             needsAcc: needsAcc, checkIn: checkIn, checkOut: checkOut
           };
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRsvp)); } catch (e2) { /* 忽略 */ }
-          showSuccess(savedRsvp);
+          /* 再填一份：保留自己那份的凭证，方便继续「修改我的回执」 */
+          if (!againMode) {
+            savedRsvp = newRsvp;
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRsvp)); } catch (e2) { /* 忽略 */ }
+          }
+          againMode = false;
+          showSuccess(newRsvp);
           refreshCount();
-        }).catch(function (e) {
+        }).catch(function () {
           submitBtn.disabled = false;
           submitBtn.textContent = '✉ 提交回执';
-          showError('提交失败：' + (e && e.message || '网络异常') + ' · 请检查网络后重试');
+          showError('提交失败：网络超时 · 请再点一次「提交回执」（幂等写入，不会重复提交）');
         });
       });
 
@@ -2034,14 +2045,16 @@
       /* 修改我的回执 */
       $('#rsvp-edit').addEventListener('click', function () {
         if (!savedRsvp) return;
+        againMode = false;
         fillFormFrom(savedRsvp);
         successBox.classList.add('hidden');
         form.classList.remove('hidden');
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
 
-      /* 再填一份（帮家人报名）：不动 savedRsvp，提交会新增一行 */
+      /* 再填一份（帮家人报名）：不动 savedRsvp，提交时新 token 新增一行 */
       $('#rsvp-again').addEventListener('click', function () {
+        againMode = true;
         successBox.classList.add('hidden');
         form.classList.remove('hidden');
         form.reset();
